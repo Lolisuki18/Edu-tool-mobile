@@ -5,6 +5,9 @@ import 'package:edutool/src/pages/requirements_page.dart';
 import 'package:edutool/src/pages/commits_page.dart';
 import 'package:edutool/src/pages/reports_page.dart';
 import 'package:edutool/src/widgets/footer_menu.dart';
+import 'package:edutool/src/auth/permissions.dart';
+import 'package:edutool/src/pages/role_home.dart';
+import 'package:edutool/src/widgets/footer.dart';
 
 class MainPage extends StatefulWidget {
   final String? role;
@@ -22,39 +25,70 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
+    final role = widget.role ?? 'Member';
+    final userId = _userIdForRole(role);
     _allPages = [
-      MapEntry('home', const HomePage()),
-      MapEntry('requirements', const RequirementsPage()),
+      MapEntry('home', HomePage(role: role, userId: userId)),
+      MapEntry('requirements', RequirementsPage(role: role)),
       MapEntry('commits', const CommitsPage()),
-      MapEntry('reports', const ReportsPage()),
+      MapEntry('reports', ReportsPage(role: role)),
       MapEntry('profile', const ProfilePage()),
     ];
     _updateVisible();
   }
 
-  void _updateVisible() {
-    final role = widget.role ?? 'Member';
-    final allowed = _allowedKeysForRole(role);
-    _visiblePages = _allPages.where((e) => allowed.contains(e.key)).toList();
-    if (_currentIndex >= _visiblePages.length) _currentIndex = 0;
-  }
-
-  List<String> _allowedKeysForRole(String role) {
+  String _userIdForRole(String role) {
     switch (role) {
-      case 'Admin':
-        return ['home', 'requirements', 'commits', 'reports', 'profile'];
       case 'Lecturer':
-        return ['home', 'requirements', 'reports', 'profile'];
+        return 'u1';
       case 'Team Leader':
-        return ['home', 'requirements', 'commits', 'reports', 'profile'];
+        return 'u2';
+      case 'Admin':
+        return 'u1';
       case 'Member':
       default:
-        return ['home', 'commits', 'profile'];
+        return 'u3';
     }
+  }
+
+  void _updateVisible() {
+    final role = widget.role ?? 'Member';
+    const keyPerm = {
+      'home': 'home:view',
+      'requirements': 'requirements:view',
+      'commits': 'commits:view',
+      'reports': 'reports:view',
+      'profile': 'profile:view',
+    };
+    _visiblePages = _allPages.where((e) {
+      final perm = keyPerm[e.key] ?? 'home:view';
+      return RolePermissions.isAllowed(role, perm);
+    }).toList();
+    if (_currentIndex >= _visiblePages.length) _currentIndex = 0;
   }
 
   @override
   Widget build(BuildContext context) {
+    // If a role string is provided (e.g. for testing or direct routing),
+    // delegate to RoleHome which renders footer/pages per role.
+    if (widget.role != null) {
+      Role r;
+      switch (widget.role) {
+        case 'Lecturer':
+          r = Role.lecturer;
+          break;
+        case 'Team Leader':
+          r = Role.teamLeader;
+          break;
+        case 'Admin':
+          r = Role.admin;
+          break;
+        case 'Member':
+        default:
+          r = Role.teamMember;
+      }
+      return RoleHome(role: r);
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(

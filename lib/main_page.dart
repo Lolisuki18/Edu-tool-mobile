@@ -5,6 +5,7 @@ import 'package:edutool/src/pages/commits_page.dart';
 import 'package:edutool/src/pages/reports_page.dart';
 import 'package:edutool/src/pages/profile_page.dart';
 import 'package:edutool/src/widgets/footer_menu.dart';
+import 'package:edutool/src/auth/permissions.dart';
 
 class MainPage extends StatefulWidget {
   final String? role;
@@ -23,36 +24,49 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
+    final role = widget.role ?? 'Member';
+    final userId = _userIdForRole(role);
     _allPages = [
-      MapEntry('home', const HomePage()),
-      MapEntry('requirements', const RequirementsPage()),
+      MapEntry('home', HomePage(role: role, userId: userId)),
+      MapEntry('requirements', RequirementsPage(role: role)),
       MapEntry('commits', const CommitsPage()),
-      MapEntry('reports', const ReportsPage()),
+      MapEntry('reports', ReportsPage(role: role)),
       MapEntry('profile', const ProfilePage()),
     ];
     _updateVisible();
   }
 
+  String _userIdForRole(String role) {
+    switch (role) {
+      case 'Lecturer':
+        return 'u1';
+      case 'Team Leader':
+        return 'u2';
+      case 'Admin':
+        return 'u1';
+      case 'Member':
+      default:
+        return 'u3';
+    }
+  }
+
   void _updateVisible() {
     final role = widget.role ?? 'Member';
-    final allowed = _allowedKeysForRole(role);
-    _visiblePages = _allPages.where((e) => allowed.contains(e.key)).toList();
+    const keyPerm = {
+      'home': 'home:view',
+      'requirements': 'requirements:view',
+      'commits': 'commits:view',
+      'reports': 'reports:view',
+      'profile': 'profile:view',
+    };
+    _visiblePages = _allPages.where((e) {
+      final perm = keyPerm[e.key] ?? 'home:view';
+      return RolePermissions.isAllowed(role, perm);
+    }).toList();
     if (_currentIndex >= _visiblePages.length) _currentIndex = 0;
   }
 
-  List<String> _allowedKeysForRole(String role) {
-    switch (role) {
-      case 'Admin':
-        return ['home', 'requirements', 'commits', 'reports', 'profile'];
-      case 'Lecturer':
-        return ['home', 'requirements', 'reports', 'profile'];
-      case 'Team Leader':
-        return ['home', 'requirements', 'commits', 'reports', 'profile'];
-      case 'Member':
-      default:
-        return ['home', 'commits', 'profile'];
-    }
-  }
+  // previous helper removed; visibility now controlled by RolePermissions
 
   @override
   Widget build(BuildContext context) {

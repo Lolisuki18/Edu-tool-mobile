@@ -34,5 +34,10 @@ class FooterMenu extends StatelessWidget {
 class FooterMenuItem {
   final IconData icon;
   final String label;
-  const FooterMenuItem({required this.icon, required this.label});
+  final String? permission;
+  const FooterMenuItem({
+    required this.icon,
+    required this.label,
+    this.permission,
+  });
 }
