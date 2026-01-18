@@ -88,6 +88,23 @@ class MockDataService {
     ),
   ];
 
+  static final reportPeriods = <ReportPeriod>[
+    ReportPeriod(
+      id: 'rp1',
+      courseId: 'c1',
+      name: 'Midterm',
+      start: DateTime.now().subtract(const Duration(days: 30)),
+      end: DateTime.now().subtract(const Duration(days: 15)),
+    ),
+    ReportPeriod(
+      id: 'rp2',
+      courseId: 'c1',
+      name: 'Final',
+      start: DateTime.now().subtract(const Duration(days: 14)),
+      end: DateTime.now(),
+    ),
+  ];
+
   static List<Course> getCoursesForUser(String userId) {
     // simple mock: return all courses for lecturer Alice, else return c1
     final user = users.firstWhere(
@@ -106,4 +123,24 @@ class MockDataService {
 
   static List<Commit> getCommitsForRepo(String repoId) =>
       commits.where((c) => c.repoId == repoId).toList();
+
+  static List<ReportPeriod> getReportPeriodsForCourse(String courseId) =>
+      reportPeriods.where((r) => r.courseId == courseId).toList();
+
+  static ReportPeriod createReportPeriod(
+    String courseId,
+    String name,
+    DateTime start,
+    DateTime end,
+  ) {
+    final rp = ReportPeriod(
+      id: 'rp${reportPeriods.length + 1}',
+      courseId: courseId,
+      name: name,
+      start: start,
+      end: end,
+    );
+    reportPeriods.add(rp);
+    return rp;
+  }
 }

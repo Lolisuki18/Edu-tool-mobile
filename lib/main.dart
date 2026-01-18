@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:edutool/src/pages/login_page.dart';
 import 'package:edutool/src/pages/main_page.dart';
+import 'package:edutool/src/pages/role_home.dart';
+import 'package:edutool/src/widgets/footer.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +20,8 @@ class MyApp extends StatelessWidget {
         '/login': (ctx) => const LoginPage(),
         '/main': (ctx) => const MainPage(),
       },
-      home: const LoginPage(),
+      // Temporarily set RoleHome as home for quick role-footer testing.
+      home: const RoleHome(role: Role.teamMember),
     );
   }
 }
