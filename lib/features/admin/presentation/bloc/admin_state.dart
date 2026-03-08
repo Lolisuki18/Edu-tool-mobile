@@ -67,11 +67,11 @@ class AdminCoursesLoaded extends AdminState {
 }
 
 class AdminEnrollmentsLoaded extends AdminState {
-  final PaginatedData<Enrollment> data;
-  const AdminEnrollmentsLoaded(this.data);
+  final List<Enrollment> enrollments;
+  const AdminEnrollmentsLoaded(this.enrollments);
 
   @override
-  List<Object?> get props => [data];
+  List<Object?> get props => [enrollments];
 }
 
 class AdminProjectsLoaded extends AdminState {

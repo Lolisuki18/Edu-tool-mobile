@@ -162,20 +162,12 @@ class AdminRepository {
   // Enrollments
   // ═══════════════════════════════════════════════════════════════════
 
-  Future<PaginatedData<Enrollment>> getEnrollments({
-    int page = 0,
-    int size = 10,
-    int? courseId,
-  }) async {
-    final qp = <String, dynamic>{'page': page, 'size': size};
-    if (courseId != null) qp['courseId'] = courseId;
-    return _getPaginated(
+  Future<List<Enrollment>> getEnrollments({required int courseId}) async {
+    final list = await _getList(
       '/api/enrollments',
-      page: page,
-      size: size,
-      extra: qp,
-      fromJson: Enrollment.fromJson,
+      queryParameters: {'courseId': courseId},
     );
+    return list.map((e) => Enrollment.fromJson(e)).toList();
   }
 
   Future<Enrollment> createEnrollment(Map<String, dynamic> body) async {

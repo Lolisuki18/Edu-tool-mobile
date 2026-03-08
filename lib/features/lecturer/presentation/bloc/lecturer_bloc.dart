@@ -26,6 +26,9 @@ class LecturerBloc extends Bloc<LecturerEvent, LecturerState> {
     on<LecturerGenerateReport>(_onGenerateReport);
     on<LecturerCreateProject>(_onCreateProject);
     on<LecturerChangePassword>(_onChangePassword);
+    on<LecturerLoadPeriodicReports>(_onLoadPeriodicReports);
+    on<LecturerCreatePeriodicReport>(_onCreatePeriodicReport);
+    on<LecturerDeletePeriodicReport>(_onDeletePeriodicReport);
   }
 
   Future<void> _onLoadDashboard(
@@ -191,6 +194,67 @@ class LecturerBloc extends Bloc<LecturerEvent, LecturerState> {
       emit(LecturerFailure(message: e.message));
     } catch (_) {
       emit(const LecturerFailure(message: 'Không thể đổi mật khẩu'));
+    }
+  }
+
+  // ── Periodic Reports ────────────────────────────────────────────
+
+  Future<void> _onLoadPeriodicReports(
+    LecturerLoadPeriodicReports event,
+    Emitter<LecturerState> emit,
+  ) async {
+    _activeCourseId = event.courseId;
+    emit(const LecturerLoading());
+    try {
+      final reports = await _repository.getPeriodicReportsByCourse(
+        event.courseId,
+      );
+      emit(LecturerPeriodicReportsLoaded(reports: reports));
+    } on ServerException catch (e) {
+      emit(LecturerFailure(message: e.message));
+    } catch (_) {
+      emit(const LecturerFailure(message: 'Không thể tải báo cáo định kỳ'));
+    }
+  }
+
+  Future<void> _onCreatePeriodicReport(
+    LecturerCreatePeriodicReport event,
+    Emitter<LecturerState> emit,
+  ) async {
+    emit(const LecturerLoading());
+    try {
+      await _repository.createPeriodicReport(
+        courseId: event.courseId,
+        reportFromDate: event.reportFromDate,
+        reportToDate: event.reportToDate,
+        submitStartAt: event.submitStartAt,
+        submitEndAt: event.submitEndAt,
+        description: event.description,
+      );
+      emit(
+        const LecturerActionSuccess(message: 'Tạo báo cáo định kỳ thành công'),
+      );
+      add(LecturerLoadPeriodicReports(courseId: event.courseId));
+    } on ServerException catch (e) {
+      emit(LecturerFailure(message: e.message));
+    } catch (_) {
+      emit(const LecturerFailure(message: 'Không thể tạo báo cáo'));
+    }
+  }
+
+  Future<void> _onDeletePeriodicReport(
+    LecturerDeletePeriodicReport event,
+    Emitter<LecturerState> emit,
+  ) async {
+    emit(const LecturerLoading());
+    try {
+      await _repository.deletePeriodicReport(event.reportId);
+      emit(const LecturerActionSuccess(message: 'Đã xóa báo cáo'));
+      add(LecturerLoadPeriodicReports(courseId: event.courseId));
+    } on ServerException catch (e) {
+      emit(LecturerFailure(message: e.message));
+    } catch (_) {
+      emit(const LecturerFailure(message: 'Không thể xóa báo cáo'));
     }
   }
 }

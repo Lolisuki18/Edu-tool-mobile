@@ -7,6 +7,8 @@ import 'package:edutool/core/theme/app_colors.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_bloc.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_event.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_state.dart';
+import 'package:edutool/shared/models/course.dart';
+import 'package:edutool/shared/models/enrollment.dart';
 
 /// Admin dashboard content — shows counts for each entity.
 class AdminDashboardContent extends StatelessWidget {
@@ -950,88 +952,229 @@ class AdminEnrollmentsScreen extends StatefulWidget {
 }
 
 class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
-  int _page = 0;
+  List<Course>? _courses;
+  int? _selectedCourseId;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
-    context.read<AdminBloc>().add(AdminLoadEnrollments(page: _page));
+    _loadCourses();
+  }
+
+  Future<void> _loadCourses() async {
+    try {
+      final courses = await context.read<AdminBloc>().repository.getCourses();
+      if (!mounted) return;
+      setState(() {
+        _courses = courses;
+        _loadError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadError = e.toString());
+    }
+  }
+
+  void _onCourseChanged(int? courseId) {
+    if (courseId == null) return;
+    setState(() => _selectedCourseId = courseId);
+    context.read<AdminBloc>().add(AdminLoadEnrollments(courseId: courseId));
+  }
+
+  void _showEditEnrollmentDialog(BuildContext ctx, Enrollment e) {
+    final projectIdCtrl = TextEditingController(text: e.projectId ?? '');
+    final roleCtrl = TextEditingController(text: e.roleInProject);
+    final groupCtrl = TextEditingController(
+      text: e.groupNumber > 0 ? e.groupNumber.toString() : '',
+    );
+
+    showDialog(
+      context: ctx,
+      builder: (dlgCtx) => AlertDialog(
+        title: Text('Cập nhật Enrollment #${e.enrollmentId}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: projectIdCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Project ID',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: roleCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Role (leader, member...)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: groupCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Group Number',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dlgCtx),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final body = <String, dynamic>{};
+              if (projectIdCtrl.text.isNotEmpty) {
+                body['projectId'] = int.tryParse(projectIdCtrl.text);
+              }
+              if (roleCtrl.text.isNotEmpty) {
+                body['roleInProject'] = roleCtrl.text;
+              }
+              if (groupCtrl.text.isNotEmpty) {
+                body['groupNumber'] = int.tryParse(groupCtrl.text);
+              }
+              Navigator.pop(dlgCtx);
+              ctx.read<AdminBloc>().add(
+                AdminUpdateEnrollment(id: e.enrollmentId, body: body),
+              );
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AdminBloc, AdminState>(
-      listener: (context, state) {
-        if (state is AdminActionSuccess) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.success,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          context.read<AdminBloc>().add(AdminLoadEnrollments(page: _page));
-        }
-      },
-      buildWhen: (p, c) =>
-          c is AdminEnrollmentsLoaded || c is AdminLoading || c is AdminFailure,
-      builder: (context, state) {
-        if (state is AdminLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (state is AdminFailure) {
-          return Center(child: Text('Lỗi: ${state.message}'));
-        }
-        if (state is! AdminEnrollmentsLoaded) return const SizedBox.shrink();
-        final enrollments = state.data.content;
-        if (enrollments.isEmpty)
-          return const Center(child: Text('Không có dữ liệu'));
+    if (_loadError != null) {
+      return Center(child: Text('Lỗi tải môn học: $_loadError'));
+    }
+    if (_courses == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_courses!.isEmpty) {
+      return const Center(child: Text('Chưa có môn học nào'));
+    }
 
-        return Column(
-          children: [
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: enrollments.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 4),
-                itemBuilder: (context, index) {
-                  final e = enrollments[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(
-                        'Enrollment #${e.enrollmentId}',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      subtitle: Text(
-                        'Student: ${e.studentId} • Course: ${e.courseId} • Group: ${e.groupNumber}',
-                      ),
-                      trailing: e.isAssigned
-                          ? const Chip(
-                              label: Text('Assigned'),
-                              visualDensity: VisualDensity.compact,
-                            )
-                          : const Chip(
-                              label: Text('Unassigned'),
-                              visualDensity: VisualDensity.compact,
+    return Column(
+      children: [
+        // ── Course selector ────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: DropdownButtonFormField<int>(
+            value: _selectedCourseId,
+            decoration: const InputDecoration(
+              labelText: 'Chọn môn học',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+            items: _courses!.map((c) {
+              final id = int.tryParse(c.courseId) ?? 0;
+              return DropdownMenuItem(
+                value: id,
+                child: Text(
+                  '${c.courseCode} – ${c.courseName}',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: _onCourseChanged,
+          ),
+        ),
+
+        // ── Enrollment list ────────────────────────────────────
+        Expanded(
+          child: _selectedCourseId == null
+              ? const Center(
+                  child: Text('Vui lòng chọn môn học để xem danh sách'),
+                )
+              : BlocConsumer<AdminBloc, AdminState>(
+                  listener: (context, state) {
+                    if (state is AdminActionSuccess) {
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                          SnackBar(
+                            content: Text(state.message),
+                            backgroundColor: AppColors.success,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      context.read<AdminBloc>().add(
+                        AdminLoadEnrollments(courseId: _selectedCourseId!),
+                      );
+                    }
+                  },
+                  buildWhen: (p, c) =>
+                      c is AdminEnrollmentsLoaded ||
+                      c is AdminLoading ||
+                      c is AdminFailure,
+                  builder: (context, state) {
+                    if (state is AdminLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (state is AdminFailure) {
+                      return Center(child: Text('Lỗi: ${state.message}'));
+                    }
+                    if (state is! AdminEnrollmentsLoaded) {
+                      return const SizedBox.shrink();
+                    }
+                    final enrollments = state.enrollments;
+                    if (enrollments.isEmpty) {
+                      return const Center(
+                        child: Text('Không có enrollment nào'),
+                      );
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: enrollments.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 4),
+                      itemBuilder: (context, index) {
+                        final e = enrollments[index];
+                        return Card(
+                          child: ListTile(
+                            onTap: () => _showEditEnrollmentDialog(context, e),
+                            title: Text(
+                              e.studentName ??
+                                  e.studentCode ??
+                                  'Student #${e.studentId}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            _PaginationBar(
-              currentPage: state.data.page.pageNumber,
-              totalPages: state.data.page.totalPages,
-              onPageChanged: (p) {
-                _page = p;
-                context.read<AdminBloc>().add(AdminLoadEnrollments(page: p));
-              },
-            ),
-          ],
-        );
-      },
+                            subtitle: Text(
+                              'Mã SV: ${e.studentCode ?? e.studentId}'
+                              '${e.groupNumber > 0 ? ' • Nhóm ${e.groupNumber}' : ''}'
+                              '${e.roleInProject.isNotEmpty ? ' • ${e.roleInProject}' : ''}',
+                            ),
+                            trailing: e.isAssigned
+                                ? Chip(
+                                    label: Text(e.projectCode ?? 'Assigned'),
+                                    visualDensity: VisualDensity.compact,
+                                    backgroundColor: AppColors.success
+                                        .withValues(alpha: 0.15),
+                                  )
+                                : const Chip(
+                                    label: Text('Unassigned'),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }

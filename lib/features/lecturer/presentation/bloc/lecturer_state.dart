@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:edutool/shared/models/models.dart';
 import 'package:edutool/features/project/data/models/group_detail_response.dart';
 import 'package:edutool/features/project/data/models/project_response.dart';
+import 'package:edutool/features/report/data/models/periodic_report_response.dart';
 
 sealed class LecturerState extends Equatable {
   const LecturerState();
@@ -72,4 +73,13 @@ class LecturerFailure extends LecturerState {
 
   @override
   List<Object?> get props => [message];
+}
+
+/// Periodic reports for a course loaded.
+class LecturerPeriodicReportsLoaded extends LecturerState {
+  final List<PeriodicReportResponse> reports;
+  const LecturerPeriodicReportsLoaded({required this.reports});
+
+  @override
+  List<Object?> get props => [reports];
 }

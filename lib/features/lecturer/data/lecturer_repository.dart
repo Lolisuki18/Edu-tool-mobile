@@ -7,6 +7,7 @@ import 'package:edutool/shared/models/models.dart';
 import 'package:edutool/features/project/data/models/group_detail_response.dart';
 import 'package:edutool/features/project/data/models/github_repo_response.dart';
 import 'package:edutool/features/project/data/models/project_response.dart';
+import 'package:edutool/features/report/data/models/periodic_report_response.dart';
 
 /// Repository handling Lecturer-side API calls.
 class LecturerRepository {
@@ -286,6 +287,88 @@ class LecturerRepository {
       }
     } on DioException catch (e) {
       throw _mapDio(e, 'Không thể đổi mật khẩu');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Periodic Reports
+  // ═══════════════════════════════════════════════════════════════════
+
+  /// GET /api/periodic-reports/courses/{courseId}
+  Future<List<PeriodicReportResponse>> getPeriodicReportsByCourse(
+    int courseId,
+  ) async {
+    try {
+      final response = await _apiClient.dio.get(
+        '/api/periodic-reports/courses/$courseId',
+      );
+      final base = BaseResponse<Map<String, dynamic>>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json as Map<String, dynamic>,
+      );
+      if (!base.isSuccess || base.data == null) {
+        throw ServerException(message: base.message, code: base.code);
+      }
+      final content = base.data!['content'] as List<dynamic>? ?? [];
+      return content
+          .map(
+            (e) => PeriodicReportResponse.fromJson(e as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (e) {
+      throw _mapDio(e, 'Không thể tải báo cáo định kỳ');
+    }
+  }
+
+  /// POST /api/periodic-reports
+  Future<PeriodicReportResponse> createPeriodicReport({
+    required int courseId,
+    required String reportFromDate,
+    required String reportToDate,
+    required String submitStartAt,
+    required String submitEndAt,
+    String? description,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/api/periodic-reports',
+        data: {
+          'courseId': courseId,
+          'reportFromDate': reportFromDate,
+          'reportToDate': reportToDate,
+          'submitStartAt': submitStartAt,
+          'submitEndAt': submitEndAt,
+          if (description != null) 'description': description,
+        },
+      );
+      final base = BaseResponse<Map<String, dynamic>>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json as Map<String, dynamic>,
+      );
+      if (!base.isSuccess || base.data == null) {
+        throw ServerException(message: base.message, code: base.code);
+      }
+      return PeriodicReportResponse.fromJson(base.data!);
+    } on DioException catch (e) {
+      throw _mapDio(e, 'Không thể tạo báo cáo');
+    }
+  }
+
+  /// DELETE /api/periodic-reports/{reportId}
+  Future<void> deletePeriodicReport(int reportId) async {
+    try {
+      final response = await _apiClient.dio.delete(
+        '/api/periodic-reports/$reportId',
+      );
+      final base = BaseResponse<dynamic>.fromJson(
+        response.data as Map<String, dynamic>,
+        null,
+      );
+      if (!base.isSuccess) {
+        throw ServerException(message: base.message, code: base.code);
+      }
+    } on DioException catch (e) {
+      throw _mapDio(e, 'Không thể xóa báo cáo');
     }
   }
 

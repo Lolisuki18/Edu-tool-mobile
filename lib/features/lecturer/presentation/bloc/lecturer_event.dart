@@ -111,3 +111,46 @@ class LecturerChangePassword extends LecturerEvent {
   @override
   List<Object?> get props => [currentPassword, newPassword, confirmPassword];
 }
+
+/// Load periodic reports for a course.
+class LecturerLoadPeriodicReports extends LecturerEvent {
+  final int courseId;
+  const LecturerLoadPeriodicReports({required this.courseId});
+
+  @override
+  List<Object?> get props => [courseId];
+}
+
+/// Create a periodic report.
+class LecturerCreatePeriodicReport extends LecturerEvent {
+  final int courseId;
+  final String reportFromDate;
+  final String reportToDate;
+  final String submitStartAt;
+  final String submitEndAt;
+  final String? description;
+  const LecturerCreatePeriodicReport({
+    required this.courseId,
+    required this.reportFromDate,
+    required this.reportToDate,
+    required this.submitStartAt,
+    required this.submitEndAt,
+    this.description,
+  });
+
+  @override
+  List<Object?> get props => [courseId, reportFromDate, reportToDate];
+}
+
+/// Delete a periodic report.
+class LecturerDeletePeriodicReport extends LecturerEvent {
+  final int reportId;
+  final int courseId;
+  const LecturerDeletePeriodicReport({
+    required this.reportId,
+    required this.courseId,
+  });
+
+  @override
+  List<Object?> get props => [reportId, courseId];
+}

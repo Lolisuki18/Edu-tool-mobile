@@ -4,20 +4,34 @@ import 'package:equatable/equatable.dart';
 class Enrollment extends Equatable {
   final String enrollmentId;
   final String studentId;
+  final String? studentCode;
+  final String? studentName;
   final String courseId;
+  final String? courseCode;
+  final String? courseName;
   final String? projectId;
+  final String? projectCode;
+  final String? projectName;
   final String roleInProject;
   final int groupNumber;
+  final String? enrolledAt;
   final String? deletedAt;
   final String? removedFromProjectAt;
 
   const Enrollment({
     required this.enrollmentId,
     required this.studentId,
+    this.studentCode,
+    this.studentName,
     required this.courseId,
+    this.courseCode,
+    this.courseName,
     this.projectId,
+    this.projectCode,
+    this.projectName,
     this.roleInProject = '',
     this.groupNumber = 0,
+    this.enrolledAt,
     this.deletedAt,
     this.removedFromProjectAt,
   });
@@ -26,10 +40,17 @@ class Enrollment extends Equatable {
     return Enrollment(
       enrollmentId: json['enrollmentId']?.toString() ?? '',
       studentId: json['studentId']?.toString() ?? '',
+      studentCode: json['studentCode'] as String?,
+      studentName: json['studentName'] as String?,
       courseId: json['courseId']?.toString() ?? '',
+      courseCode: json['courseCode'] as String?,
+      courseName: json['courseName'] as String?,
       projectId: json['projectId']?.toString(),
+      projectCode: json['projectCode'] as String?,
+      projectName: json['projectName'] as String?,
       roleInProject: json['roleInProject'] as String? ?? '',
       groupNumber: json['groupNumber'] as int? ?? 0,
+      enrolledAt: json['enrolledAt'] as String?,
       deletedAt: json['deletedAt'] as String?,
       removedFromProjectAt: json['removedFromProjectAt'] as String?,
     );

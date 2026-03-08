@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:edutool/core/theme/app_colors.dart';
+import 'package:edutool/shared/models/models.dart';
 import 'package:edutool/features/lecturer/presentation/bloc/lecturer_bloc.dart';
 import 'package:edutool/features/lecturer/presentation/bloc/lecturer_event.dart';
 import 'package:edutool/features/lecturer/presentation/bloc/lecturer_state.dart';
@@ -591,7 +592,62 @@ class _ReportsTab extends StatefulWidget {
   State<_ReportsTab> createState() => _ReportsTabState();
 }
 
-class _ReportsTabState extends State<_ReportsTab> {
+class _ReportsTabState extends State<_ReportsTab>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: TabBar(
+              controller: _tabCtrl,
+              tabs: const [
+                Tab(text: 'Commit Report'),
+                Tab(text: 'Báo cáo định kỳ'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabCtrl,
+              children: const [
+                _CommitReportSection(),
+                _PeriodicReportSection(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Commit Report Section (was the old _ReportsTab body) ────────────────────
+
+class _CommitReportSection extends StatefulWidget {
+  const _CommitReportSection();
+
+  @override
+  State<_CommitReportSection> createState() => _CommitReportSectionState();
+}
+
+class _CommitReportSectionState extends State<_CommitReportSection> {
   int? _selectedProjectId;
   String? _since;
   String? _until;
@@ -627,7 +683,6 @@ class _ReportsTabState extends State<_ReportsTab> {
   @override
   void initState() {
     super.initState();
-    // Load projects after dashboard is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = context.read<LecturerBloc>().state;
       if (state is LecturerDashboardLoaded) {
@@ -695,73 +750,71 @@ class _ReportsTabState extends State<_ReportsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text(
-            'Báo cáo Commit',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 16),
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Text(
+          'Báo cáo Commit',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: 16),
 
-          // Project selector
-          if (_projectsLoading)
-            const Center(child: CircularProgressIndicator())
-          else
-            DropdownButtonFormField<int>(
-              decoration: const InputDecoration(
-                labelText: 'Chọn Project',
-                border: OutlineInputBorder(),
-              ),
-              value: _selectedProjectId,
-              items: _allProjects
-                  .map(
-                    (p) => DropdownMenuItem(
-                      value: p.projectId,
-                      child: Text('${p.projectCode} – ${p.projectName}'),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() => _selectedProjectId = v),
+        // Project selector
+        if (_projectsLoading)
+          const Center(child: CircularProgressIndicator())
+        else
+          DropdownButtonFormField<int>(
+            decoration: const InputDecoration(
+              labelText: 'Chọn Project',
+              border: OutlineInputBorder(),
             ),
-          const SizedBox(height: 12),
-
-          // Date range
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _pickDate(true),
-                  icon: const Icon(Icons.calendar_today, size: 16),
-                  label: Text(_since ?? 'Từ ngày'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _pickDate(false),
-                  icon: const Icon(Icons.calendar_today, size: 16),
-                  label: Text(_until ?? 'Đến ngày'),
-                ),
-              ),
-            ],
+            value: _selectedProjectId,
+            items: _allProjects
+                .map(
+                  (p) => DropdownMenuItem(
+                    value: p.projectId,
+                    child: Text('${p.projectCode} – ${p.projectName}'),
+                  ),
+                )
+                .toList(),
+            onChanged: (v) => setState(() => _selectedProjectId = v),
           ),
-          const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
-          FilledButton.icon(
-            onPressed: _selectedProjectId != null ? _generateReport : null,
-            icon: const Icon(Icons.assessment),
-            label: const Text('Xuất báo cáo'),
-          ),
-          const SizedBox(height: 16),
+        // Date range
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _pickDate(true),
+                icon: const Icon(Icons.calendar_today, size: 16),
+                label: Text(_since ?? 'Từ ngày'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _pickDate(false),
+                icon: const Icon(Icons.calendar_today, size: 16),
+                label: Text(_until ?? 'Đến ngày'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
 
-          if (_loading) const Center(child: CircularProgressIndicator()),
-          if (_error != null)
-            Text(_error!, style: const TextStyle(color: AppColors.error)),
-          if (_reportData != null) _buildReportView(),
-        ],
-      ),
+        FilledButton.icon(
+          onPressed: _selectedProjectId != null ? _generateReport : null,
+          icon: const Icon(Icons.assessment),
+          label: const Text('Xuất báo cáo'),
+        ),
+        const SizedBox(height: 16),
+
+        if (_loading) const Center(child: CircularProgressIndicator()),
+        if (_error != null)
+          Text(_error!, style: const TextStyle(color: AppColors.error)),
+        if (_reportData != null) _buildReportView(),
+      ],
     );
   }
 
@@ -828,6 +881,310 @@ class _ReportsTabState extends State<_ReportsTab> {
             ),
           );
         }),
+      ],
+    );
+  }
+}
+
+// ── Periodic Report Section ─────────────────────────────────────────────────
+
+class _PeriodicReportSection extends StatefulWidget {
+  const _PeriodicReportSection();
+
+  @override
+  State<_PeriodicReportSection> createState() => _PeriodicReportSectionState();
+}
+
+class _PeriodicReportSectionState extends State<_PeriodicReportSection> {
+  List<Course>? _courses;
+  int? _selectedCourseId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = context.read<LecturerBloc>().state;
+      if (state is LecturerDashboardLoaded) {
+        setState(() => _courses = state.courses);
+      } else {
+        context
+            .read<LecturerBloc>()
+            .stream
+            .firstWhere((s) => s is LecturerDashboardLoaded)
+            .then((s) {
+              if (mounted) {
+                setState(
+                  () => _courses = (s as LecturerDashboardLoaded).courses,
+                );
+              }
+            });
+      }
+    });
+  }
+
+  void _onCourseChanged(int? id) {
+    if (id == null) return;
+    setState(() => _selectedCourseId = id);
+    context.read<LecturerBloc>().add(LecturerLoadPeriodicReports(courseId: id));
+  }
+
+  void _showCreateDialog() {
+    if (_selectedCourseId == null) return;
+    final descCtrl = TextEditingController();
+    DateTime? fromDate, toDate, submitStart, submitEnd;
+
+    Future<DateTime?> pick(DateTime? initial) => showDatePicker(
+      context: context,
+      initialDate: initial ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    String fmt(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}T00:00:00';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Tạo báo cáo định kỳ'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                OutlinedButton(
+                  onPressed: () async {
+                    final d = await pick(fromDate);
+                    if (d != null) setDialogState(() => fromDate = d);
+                  },
+                  child: Text(
+                    fromDate != null
+                        ? 'Từ: ${fromDate!.toIso8601String().substring(0, 10)}'
+                        : 'Chọn ngày bắt đầu báo cáo',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () async {
+                    final d = await pick(toDate);
+                    if (d != null) setDialogState(() => toDate = d);
+                  },
+                  child: Text(
+                    toDate != null
+                        ? 'Đến: ${toDate!.toIso8601String().substring(0, 10)}'
+                        : 'Chọn ngày kết thúc báo cáo',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () async {
+                    final d = await pick(submitStart);
+                    if (d != null) setDialogState(() => submitStart = d);
+                  },
+                  child: Text(
+                    submitStart != null
+                        ? 'Mở nộp: ${submitStart!.toIso8601String().substring(0, 10)}'
+                        : 'Chọn ngày bắt đầu nộp',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () async {
+                    final d = await pick(submitEnd);
+                    if (d != null) setDialogState(() => submitEnd = d);
+                  },
+                  child: Text(
+                    submitEnd != null
+                        ? 'Hạn nộp: ${submitEnd!.toIso8601String().substring(0, 10)}'
+                        : 'Chọn hạn nộp',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Mô tả (tuỳ chọn)',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (fromDate == null ||
+                    toDate == null ||
+                    submitStart == null ||
+                    submitEnd == null) {
+                  return;
+                }
+                Navigator.pop(ctx);
+                context.read<LecturerBloc>().add(
+                  LecturerCreatePeriodicReport(
+                    courseId: _selectedCourseId!,
+                    reportFromDate: fmt(fromDate!),
+                    reportToDate: fmt(toDate!),
+                    submitStartAt: fmt(submitStart!),
+                    submitEndAt: fmt(submitEnd!),
+                    description: descCtrl.text.isNotEmpty
+                        ? descCtrl.text
+                        : null,
+                  ),
+                );
+              },
+              child: const Text('Tạo'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_courses == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Column(
+      children: [
+        // Course selector
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  value: _selectedCourseId,
+                  decoration: const InputDecoration(
+                    labelText: 'Chọn môn học',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  items: _courses!.map((c) {
+                    final id = int.tryParse(c.courseId) ?? 0;
+                    return DropdownMenuItem(
+                      value: id,
+                      child: Text(
+                        '${c.courseCode} – ${c.courseName}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: _onCourseChanged,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filled(
+                onPressed: _selectedCourseId != null ? _showCreateDialog : null,
+                icon: const Icon(Icons.add),
+                tooltip: 'Tạo báo cáo',
+              ),
+            ],
+          ),
+        ),
+
+        // Report list
+        Expanded(
+          child: _selectedCourseId == null
+              ? const Center(child: Text('Chọn môn học để xem'))
+              : BlocConsumer<LecturerBloc, LecturerState>(
+                  listener: (context, state) {
+                    if (state is LecturerActionSuccess) {
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                          SnackBar(
+                            content: Text(state.message),
+                            backgroundColor: AppColors.success,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                    }
+                  },
+                  buildWhen: (p, c) =>
+                      c is LecturerPeriodicReportsLoaded ||
+                      c is LecturerLoading ||
+                      c is LecturerFailure,
+                  builder: (context, state) {
+                    if (state is LecturerLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (state is LecturerFailure) {
+                      return Center(child: Text('Lỗi: ${state.message}'));
+                    }
+                    if (state is! LecturerPeriodicReportsLoaded) {
+                      return const SizedBox.shrink();
+                    }
+                    if (state.reports.isEmpty) {
+                      return const Center(
+                        child: Text('Chưa có báo cáo định kỳ'),
+                      );
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: state.reports.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 4),
+                      itemBuilder: (context, index) {
+                        final r = state.reports[index];
+                        return Card(
+                          child: ListTile(
+                            title: Text(
+                              r.description ?? 'Báo cáo #${r.reportId}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Từ ${r.reportFromDate.substring(0, 10)} '
+                              'đến ${r.reportToDate.substring(0, 10)}\n'
+                              'Nộp: ${r.submitStartAt.substring(0, 10)} '
+                              '→ ${r.submitEndAt.substring(0, 10)}',
+                            ),
+                            isThreeLine: true,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Chip(
+                                  label: Text(r.status),
+                                  visualDensity: VisualDensity.compact,
+                                  backgroundColor: r.status == 'ACTIVE'
+                                      ? AppColors.success.withValues(
+                                          alpha: 0.15,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    context.read<LecturerBloc>().add(
+                                      LecturerDeletePeriodicReport(
+                                        reportId: r.reportId,
+                                        courseId: _selectedCourseId!,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+        ),
       ],
     );
   }

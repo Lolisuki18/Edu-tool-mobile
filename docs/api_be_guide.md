@@ -18,8 +18,9 @@
 8. [Project](#8-project)
 9. [Course Enrollment](#9-course-enrollment)
 10. [Periodic Report](#10-periodic-report)
-11. [GitHub Repository & Commit Report](#11-github-repository--commit-report)
-12. [Ghi chú cho Flutter](#12-ghi-chú-cho-flutter)
+11. [Ghi chú cho Flutter](#11-ghi-chú-cho-flutter)
+
+> ⚠️ **Lưu ý**: GitHub Repository & Commit Report APIs chưa được implement trong BE hiện tại.
 
 ---
 
@@ -47,14 +48,14 @@ Mọi API đều trả về `BaseResponse<T>`:
 | `errors`    | `array`   | Danh sách lỗi validation                             |
 | `timestamp` | `string`  | Thời điểm response (ISO 8601)                        |
 
-**Paginated Response** (khi API có phân trang) – `data` sẽ có dạng:
+**Paginated Response** — `data` có dạng `Page<T>` của Spring:
 
 ```json
 {
   "content": [ ... ],
   "page": {
-    "pageNumber": 0,
-    "pageSize": 10,
+    "number": 0,
+    "size": 10,
     "totalElements": 50,
     "totalPages": 5
   }
@@ -64,6 +65,8 @@ Mọi API đều trả về `BaseResponse<T>`:
 ---
 
 ## 2. Authentication
+
+> Không cần `Authorization` header.
 
 ### 2.1 Đăng ký
 
@@ -107,10 +110,6 @@ POST /auth/register
 ```
 GET /auth/verify?token={token}
 ```
-
-| Param   | Type     | Mô tả               |
-| ------- | -------- | ------------------- |
-| `token` | `string` | Token gửi qua email |
 
 **Response 200:**
 
@@ -159,10 +158,10 @@ POST /auth/login
 }
 ```
 
-> **Flutter**: Lưu `accessToken` vào `SecureStorage`. Gửi kèm mọi request tiếp theo trong header:  
+> **Flutter**: Lưu `accessToken` vào SecureStorage. Gửi kèm mọi request tiếp theo:  
 > `Authorization: Bearer {accessToken}`
 
-> **Lưu ý**: Server set `refreshToken` trong **HttpOnly Cookie** (`/auth/refresh`). Flutter dùng `http` package cần bật cookie handling (dùng `http` + `cookie_jar`).
+> Server set `refreshToken` trong **HttpOnly Cookie** tại path `/auth/refresh`. Flutter cần dùng `dio_cookie_manager` để tự động gửi cookie khi refresh.
 
 ---
 
@@ -173,7 +172,7 @@ POST /auth/refresh
 ```
 
 > Cookie `refreshToken` phải được gửi kèm tự động.  
-> Access token hết hạn sau **10 giờ** (36,000,000ms).
+> Access token hết hạn sau **10 giờ**.
 
 **Response 200:**
 
@@ -200,8 +199,6 @@ POST /auth/refresh
 POST /auth/logout
 ```
 
-> Xóa cookie `refreshToken` phía server.
-
 **Response 200:**
 
 ```json
@@ -225,7 +222,7 @@ POST /auth/logout
 GET /api/users/me
 ```
 
-**Roles cho phép:** Tất cả (đã đăng nhập)
+**Roles:** Tất cả (đã đăng nhập)
 
 **Response 200:**
 
@@ -247,7 +244,7 @@ GET /api/users/me
 
 ---
 
-### 3.2 Tạo user mới (Admin)
+### 3.2 Tạo user mới
 
 ```
 POST /api/users
@@ -268,36 +265,11 @@ POST /api/users
 }
 ```
 
-| Field      | Required | Values                                        |
-| ---------- | -------- | --------------------------------------------- |
-| `username` | ✅       | 3–50 ký tự                                    |
-| `password` | ✅       | 6–100 ký tự                                   |
-| `email`    | ✅       | Email hợp lệ                                  |
-| `fullName` | ✅       | Tối đa 255 ký tự                              |
-| `role`     | ✅       | `ADMIN` / `LECTURER` / `STUDENT`              |
-| `status`   | ❌       | `ACTIVE` (default) / `INACTIVE` / `SUSPENDED` |
-
-**Response 201:**
-
-```json
-{
-  "isSuccess": true,
-  "code": 201,
-  "message": "User created successfully",
-  "data": {
-    "userId": 5,
-    "username": "lecturer01",
-    "role": "LECTURER",
-    "fullName": "Tran Thi B",
-    "email": "lecturer01@fpt.edu.vn",
-    "status": "ACTIVE"
-  }
-}
-```
+**Response 201:** → `data` là `UserResponse` (xem 3.1)
 
 ---
 
-### 3.3 Lấy user theo ID (Admin)
+### 3.3 Lấy user theo ID
 
 ```
 GET /api/users/{userId}
@@ -305,14 +277,14 @@ GET /api/users/{userId}
 
 **Roles:** `ADMIN`
 
-**Response 200:** → `data` là `UserResponse` (xem 3.1)
+**Response 200:** → `data` là `UserResponse`
 
 ---
 
-### 3.4 Lấy danh sách users (Admin)
+### 3.4 Lấy danh sách users (phân trang)
 
 ```
-GET /api/users?keyword=&role=&status=&page=0&size=10&sortBy=userId&sortDirection=ASC
+GET /api/users?username=&email=&fullName=&keyword=&role=&status=&page=0&size=10&sortBy=userId&sortDirection=ASC
 ```
 
 **Roles:** `ADMIN`
@@ -330,11 +302,11 @@ GET /api/users?keyword=&role=&status=&page=0&size=10&sortBy=userId&sortDirection
 | `sortBy`        | `string` | `userId` / `username` / `email` / `fullName` |
 | `sortDirection` | `string` | `ASC` / `DESC`                               |
 
-**Response 200:** → `data` là `Page<UserResponse>` (phân trang)
+**Response 200:** → `data` là `Page<UserResponse>`
 
 ---
 
-### 3.5 Cập nhật user (Admin)
+### 3.5 Cập nhật user
 
 ```
 PUT /api/users/{userId}
@@ -342,7 +314,7 @@ PUT /api/users/{userId}
 
 **Roles:** `ADMIN`
 
-**Request Body:**
+**Request Body:** (tất cả optional)
 
 ```json
 {
@@ -354,13 +326,11 @@ PUT /api/users/{userId}
 }
 ```
 
-> Tất cả các field đều **optional**.
-
 **Response 200:** → `data` là `UserResponse`
 
 ---
 
-### 3.6 Xóa user (Admin)
+### 3.6 Xóa user
 
 ```
 DELETE /api/users/{userId}
@@ -368,20 +338,11 @@ DELETE /api/users/{userId}
 
 **Roles:** `ADMIN`
 
-**Response 200:**
-
-```json
-{
-  "isSuccess": true,
-  "code": 200,
-  "message": "User deleted successfully",
-  "data": null
-}
-```
+**Response 200:** `data: null`
 
 ---
 
-### 3.7 Cập nhật role user (Admin)
+### 3.7 Cập nhật role user
 
 ```
 PUT /api/users/admin/update-role
@@ -400,7 +361,7 @@ PUT /api/users/admin/update-role
 
 ---
 
-### 3.8 Đổi password (User hiện tại)
+### 3.8 Đổi password
 
 ```
 PUT /api/users/me/password
@@ -418,20 +379,11 @@ PUT /api/users/me/password
 }
 ```
 
-**Response 200:**
-
-```json
-{
-  "isSuccess": true,
-  "code": 200,
-  "message": "Password changed successfully",
-  "data": null
-}
-```
+**Response 200:** `data: null`
 
 ---
 
-### 3.9 Đổi email (User hiện tại)
+### 3.9 Đổi email
 
 ```
 PUT /api/users/me/email
@@ -450,26 +402,25 @@ PUT /api/users/me/email
 
 ---
 
-### 3.10 Export CSV (Admin)
+### 3.10 Export CSV
 
 ```
 GET /api/users/export
 ```
 
 **Roles:** `ADMIN`  
-**Response:** File CSV (`text/csv`)
+**Response:** File `text/csv`
 
 ---
 
-### 3.11 Import CSV (Admin)
+### 3.11 Import CSV
 
 ```
 POST /api/users/import
 Content-Type: multipart/form-data
 ```
 
-**Roles:** `ADMIN`
-
+**Roles:** `ADMIN`  
 **Form field:** `file` (`.csv`)
 
 **Response 200:**
@@ -493,7 +444,7 @@ Content-Type: multipart/form-data
 
 ## 4. Student
 
-### 4.1 Tạo student profile (Admin)
+### 4.1 Tạo student profile
 
 ```
 POST /api/students
@@ -510,12 +461,6 @@ POST /api/students
   "githubUsername": "vana-github"
 }
 ```
-
-| Field            | Required | Validation                              |
-| ---------------- | -------- | --------------------------------------- |
-| `studentCode`    | ✅       | 3–50 ký tự, duy nhất                    |
-| `userId`         | ✅       | ID của user đã tồn tại với role STUDENT |
-| `githubUsername` | ❌       | Tối đa 100 ký tự                        |
 
 **Response 201:**
 
@@ -551,11 +496,11 @@ GET /api/students/{id}
 
 **Roles:** `ADMIN` / `LECTURER` / `STUDENT`
 
-**Response 200:** → `data` là `StudentResponse` (xem 4.1)
+**Response 200:** → `data` là `StudentResponse`
 
 ---
 
-### 4.3 Tìm kiếm students (có phân trang)
+### 4.3 Tìm kiếm students (phân trang)
 
 ```
 GET /api/students?keyword=&studentCode=&githubUsername=&fullName=&page=0&size=10&sortBy=studentId&direction=ASC
@@ -568,13 +513,13 @@ GET /api/students?keyword=&studentCode=&githubUsername=&fullName=&page=0&size=10
 | `studentCode`    | Tìm theo mã SV                                                            |
 | `githubUsername` | Tìm theo GitHub username                                                  |
 | `fullName`       | Tìm theo tên                                                              |
-| `keyword`        | Tìm trên tất cả các field trên                                            |
+| `keyword`        | Tìm trên tất cả field                                                     |
 | `page`           | Trang (default: 0)                                                        |
 | `size`           | Kích thước trang (1–100, default: 10)                                     |
 | `sortBy`         | `studentId` / `studentCode` / `fullName` / `githubUsername` / `createdAt` |
 | `direction`      | `ASC` / `DESC`                                                            |
 
-**Response 200:** → `data` là `Page<StudentResponse>` (phân trang Spring)
+**Response 200:** → `data` là `Page<StudentResponse>`
 
 ---
 
@@ -599,7 +544,7 @@ PUT /api/students/{id}
 
 ---
 
-### 4.5 Xóa student (Admin)
+### 4.5 Xóa student
 
 ```
 DELETE /api/students/{id}
@@ -613,7 +558,7 @@ DELETE /api/students/{id}
 
 ## 5. Lecturer
 
-### 5.1 Tạo lecturer profile (Admin)
+### 5.1 Tạo lecturer profile
 
 ```
 POST /api/lecturers
@@ -663,7 +608,7 @@ GET /api/lecturers/{id}
 
 **Roles:** `ADMIN` / `LECTURER`
 
-**Response 200:** → `data` là `LecturerResponse` (xem 5.1)
+**Response 200:** → `data` là `LecturerResponse`
 
 ---
 
@@ -679,7 +624,7 @@ GET /api/lecturers/user/{userId}
 
 ---
 
-### 5.4 Tìm kiếm lecturers (có phân trang)
+### 5.4 Tìm kiếm lecturers (phân trang)
 
 ```
 GET /api/lecturers?keyword=&fullName=&staffCode=&page=0&size=10&sortBy=lecturerId&direction=ASC
@@ -693,6 +638,8 @@ GET /api/lecturers?keyword=&fullName=&staffCode=&page=0&size=10&sortBy=lecturerI
 | `staffCode` | Tìm theo mã GV                                        |
 | `keyword`   | Tìm trên fullName, staffCode                          |
 | `sortBy`    | `lecturerId` / `staffCode` / `fullName` / `createdAt` |
+
+**Response 200:** → `data` là `Page<LecturerResponse>`
 
 ---
 
@@ -712,9 +659,11 @@ PUT /api/lecturers/{id}
 }
 ```
 
+**Response 200:** → `data` là `LecturerResponse`
+
 ---
 
-### 5.6 Xóa lecturer (Admin)
+### 5.6 Xóa lecturer
 
 ```
 DELETE /api/lecturers/{id}
@@ -722,11 +671,15 @@ DELETE /api/lecturers/{id}
 
 **Roles:** `ADMIN`
 
+**Response 200:** `data: null`
+
 ---
 
 ## 6. Semester
 
-### 6.1 Tạo semester (Admin)
+> ⚠️ **Lưu ý**: Semester endpoints **không** có prefix `/api/`.
+
+### 6.1 Tạo semester
 
 ```
 POST /semesters
@@ -738,19 +691,12 @@ POST /semesters
 
 ```json
 {
-  "name": "Spring 2026",
+  "semesterName": "Spring 2026",
   "startDate": "2026-01-01",
   "endDate": "2026-05-31",
   "status": true
 }
 ```
-
-| Field       | Required | Mô tả                   |
-| ----------- | -------- | ----------------------- |
-| `name`      | ✅       | 1–100 ký tự             |
-| `startDate` | ✅       | Định dạng `yyyy-MM-dd`  |
-| `endDate`   | ✅       | Định dạng `yyyy-MM-dd`  |
-| `status`    | ✅       | `true` = đang hoạt động |
 
 **Response 201:**
 
@@ -761,7 +707,7 @@ POST /semesters
   "message": "Success",
   "data": {
     "semesterId": 1,
-    "name": "Spring 2026",
+    "semesterName": "Spring 2026",
     "startDate": "2026-01-01",
     "endDate": "2026-05-31",
     "status": true,
@@ -772,7 +718,7 @@ POST /semesters
 
 ---
 
-### 6.2 Cập nhật semester (Admin)
+### 6.2 Cập nhật semester
 
 ```
 PUT /semesters/{semesterId}
@@ -780,7 +726,9 @@ PUT /semesters/{semesterId}
 
 **Roles:** `ADMIN`
 
-**Request Body:** sama như 6.1
+**Request Body:** Giống 6.1
+
+**Response 200:** → `data` là `SemesterResponse`
 
 ---
 
@@ -792,7 +740,7 @@ GET /semesters/{semesterId}
 
 **Roles:** Tất cả (đã đăng nhập)
 
-**Response 200:** → `data` là `SemesterResponse` (xem 6.1)
+**Response 200:** → `data` là `SemesterResponse`
 
 ---
 
@@ -802,11 +750,13 @@ GET /semesters/{semesterId}
 GET /semesters
 ```
 
+**Roles:** Tất cả (đã đăng nhập)
+
 **Response 200:** → `data` là `List<SemesterResponse>`
 
 ---
 
-### 6.5 Xóa semester (Admin – soft delete)
+### 6.5 Xóa semester (soft delete)
 
 ```
 DELETE /semesters/{semesterId}
@@ -816,9 +766,13 @@ DELETE /semesters/{semesterId}
 
 > Chuyển `status` về `false`, không xóa khỏi DB.
 
+**Response 200:** `data: null`
+
 ---
 
 ## 7. Course
+
+> ⚠️ **Lưu ý**: Course endpoints **không** có prefix `/api/`.
 
 ### 7.1 Tạo course
 
@@ -840,14 +794,6 @@ POST /courses
 }
 ```
 
-| Field        | Required | Mô tả                     |
-| ------------ | -------- | ------------------------- |
-| `courseCode` | ✅       | Duy nhất                  |
-| `courseName` | ✅       |                           |
-| `status`     | ❌       | `true` = active (default) |
-| `semesterId` | ❌       | ID học kỳ                 |
-| `lecturerId` | ❌       | ID giảng viên             |
-
 **Response 201:**
 
 ```json
@@ -863,7 +809,7 @@ POST /courses
     "createdAt": "2026-03-08T10:00:00",
     "semester": {
       "semesterId": 1,
-      "name": "Spring 2026",
+      "semesterName": "Spring 2026",
       "startDate": "2026-01-01",
       "endDate": "2026-05-31",
       "status": true,
@@ -872,7 +818,7 @@ POST /courses
     "lecturer": {
       "lecturerId": 2,
       "staffCode": "GV001",
-      "user": { ... },
+      "user": { "...": "..." },
       "createdAt": "..."
     }
   }
@@ -886,6 +832,8 @@ POST /courses
 ```
 GET /courses
 ```
+
+**Roles:** Tất cả (đã đăng nhập)
 
 **Response 200:** → `data` là `List<CourseResponse>`
 
@@ -921,6 +869,8 @@ PUT /courses/{courseId}
 
 **Request Body:** Giống 7.1
 
+**Response 200:** → `data` là `CourseResponse`
+
 ---
 
 ### 7.6 Xóa course
@@ -930,6 +880,8 @@ DELETE /courses/{courseId}
 ```
 
 **Roles:** `ADMIN` / `LECTURER`
+
+**Response 200:** `data: null`
 
 ---
 
@@ -954,14 +906,6 @@ POST /api/projects
   "technologies": "Flutter, Spring Boot, PostgreSQL"
 }
 ```
-
-| Field          | Required | Mô tả    |
-| -------------- | -------- | -------- |
-| `projectCode`  | ✅       | Duy nhất |
-| `projectName`  | ✅       |          |
-| `courseId`     | ✅       |          |
-| `description`  | ❌       |          |
-| `technologies` | ❌       |          |
 
 **Response 201:**
 
@@ -1014,7 +958,7 @@ GET /api/projects?code=&courseId=&deleted=false
 | `courseId` | Lấy tất cả projects của môn học          |
 | `deleted`  | `true` = lấy projects đã xóa (chỉ admin) |
 
-> Nếu không truyền param nào → lấy tất cả projects.
+> Nếu không truyền param nào → lấy tất cả projects (không phân trang).
 
 **Response 200:** → `data` là `List<ProjectResponse>`
 
@@ -1029,6 +973,8 @@ PUT /api/projects/{projectId}
 **Roles:** `ADMIN` / `LECTURER`
 
 **Request Body:** Giống 8.1
+
+**Response 200:** → `data` là `ProjectResponse`
 
 ---
 
@@ -1114,6 +1060,8 @@ GET /api/enrollments/{enrollmentId}
 
 **Roles:** `ADMIN` / `LECTURER` / `STUDENT`
 
+**Response 200:** → `data` là `EnrollmentResponse`
+
 ---
 
 ### 9.3 Lấy danh sách enrollments (filter)
@@ -1124,7 +1072,7 @@ GET /api/enrollments?courseId=&studentId=&projectId=
 
 **Roles:** `ADMIN` / `LECTURER` / `STUDENT`
 
-> Phải cung cấp **một** trong ba param.
+> Phải cung cấp **một** trong ba param. Nếu không có param → lỗi 400.
 
 | Param       | Mô tả                       |
 | ----------- | --------------------------- |
@@ -1136,7 +1084,7 @@ GET /api/enrollments?courseId=&studentId=&projectId=
 
 ---
 
-### 9.4 Cập nhật enrollment (gán project/role/group)
+### 9.4 Cập nhật enrollment (đổi project/role/group)
 
 ```
 PUT /api/enrollments/{enrollmentId}
@@ -1144,7 +1092,7 @@ PUT /api/enrollments/{enrollmentId}
 
 **Roles:** `ADMIN` / `LECTURER`
 
-**Request Body:**
+**Request Body:** (tất cả optional)
 
 ```json
 {
@@ -1154,13 +1102,25 @@ PUT /api/enrollments/{enrollmentId}
 }
 ```
 
-> Tất cả field đều **optional**.
+**Response 200:** → `data` là `EnrollmentResponse`
+
+---
+
+### 9.5 Gán sinh viên vào project
+
+```
+PUT /api/enrollments/{enrollmentId}/project?projectId={projectId}
+```
+
+**Roles:** `ADMIN` / `LECTURER`
+
+> Dùng để phân nhóm — gán trực tiếp 1 SV vào 1 project bằng query param `projectId`.
 
 **Response 200:** → `data` là `EnrollmentResponse`
 
 ---
 
-### 9.5 Xóa enrollment
+### 9.6 Xóa enrollment
 
 ```
 DELETE /api/enrollments/{enrollmentId}?permanent=false
@@ -1174,7 +1134,7 @@ DELETE /api/enrollments/{enrollmentId}?permanent=false
 
 ---
 
-### 9.6 Các action trên enrollment (PATCH)
+### 9.7 Actions trên enrollment (PATCH)
 
 ```
 PATCH /api/enrollments/{enrollmentId}?action={action}
@@ -1189,6 +1149,20 @@ PATCH /api/enrollments/{enrollmentId}?action={action}
 | `restore-to-project`  | Thêm lại SV vào project                |
 
 **Response 200:** → `data` là `EnrollmentResponse`
+
+---
+
+### 9.8 Xem lịch sử SV đã bị xóa khỏi project
+
+```
+GET /api/enrollments/projects/{projectId}/history
+```
+
+**Roles:** `ADMIN` / `LECTURER`
+
+> Trả về danh sách các enrollment có `removedFromProjectAt != null` của project đó.
+
+**Response 200:** → `data` là `List<EnrollmentResponse>`
 
 ---
 
@@ -1215,15 +1189,6 @@ POST /api/periodic-reports
 }
 ```
 
-| Field            | Required | Mô tả                         |
-| ---------------- | -------- | ----------------------------- |
-| `courseId`       | ✅       |                               |
-| `reportFromDate` | ✅       | ISO 8601 datetime             |
-| `reportToDate`   | ✅       | ISO 8601 datetime             |
-| `submitStartAt`  | ✅       | Thời điểm bắt đầu nộp báo cáo |
-| `submitEndAt`    | ✅       | Hạn nộp                       |
-| `description`    | ❌       |                               |
-
 **Response 201:**
 
 ```json
@@ -1248,8 +1213,6 @@ POST /api/periodic-reports
 }
 ```
 
-> `status`: `ACTIVE` = đang mở / `INACTIVE` = đã xóa
-
 ---
 
 ### 10.2 Lấy periodic report theo ID
@@ -1259,6 +1222,8 @@ GET /api/periodic-reports/{reportId}
 ```
 
 **Roles:** `ADMIN` / `LECTURER` / `STUDENT`
+
+**Response 200:** → `data` là `PeriodicReportResponse`
 
 ---
 
@@ -1270,7 +1235,7 @@ GET /api/periodic-reports?page=0&size=10&sortBy=createdAt&sortDirection=DESC
 
 **Roles:** `ADMIN` / `LECTURER` / `STUDENT`
 
-**Response 200:** → `data` là `PageResponse<PeriodicReportResponse>`
+**Response 200:** → `data` là `Page<PeriodicReportResponse>`
 
 ---
 
@@ -1287,6 +1252,8 @@ GET /api/periodic-reports/courses/{courseId}?fromDate=&toDate=&page=0&size=10&so
 | `fromDate` | Filter từ ngày (ISO 8601, optional)  |
 | `toDate`   | Filter đến ngày (ISO 8601, optional) |
 
+**Response 200:** → `data` là `Page<PeriodicReportResponse>`
+
 ---
 
 ### 10.5 Lấy periodic reports đang mở (có thể submit)
@@ -1298,6 +1265,8 @@ GET /api/periodic-reports/courses/{courseId}/submissions/active?page=0&size=10
 **Roles:** `ADMIN` / `LECTURER` / `STUDENT`
 
 > Chỉ trả về các report hiện đang trong thời gian cho phép nộp (`submitStartAt` ≤ now ≤ `submitEndAt`).
+
+**Response 200:** → `data` là `Page<PeriodicReportResponse>`
 
 ---
 
@@ -1311,452 +1280,4 @@ PUT /api/periodic-reports/{reportId}
 
 **Request Body:** Giống 10.1
 
----
-
-### 10.7 Xóa periodic report (soft delete → INACTIVE)
-
-```
-DELETE /api/periodic-reports/{reportId}
-```
-
-**Roles:** `ADMIN` / `LECTURER`
-
----
-
-### 10.8 Khôi phục periodic report (→ ACTIVE)
-
-```
-PATCH /api/periodic-reports/{reportId}
-```
-
-**Roles:** `ADMIN` / `LECTURER`
-
----
-
-### 10.9 Lấy danh sách periodic reports đã xóa (Admin)
-
-```
-GET /api/periodic-reports/inactive?page=0&size=10&sortBy=createdAt&sortDirection=DESC
-```
-
-**Roles:** `ADMIN`
-
----
-
-## 11. GitHub Repository & Commit Report
-
-### 11.1 Nộp github repository cho project
-
-```
-POST /api/github/repositories
-```
-
-**Roles:** `ADMIN` / `LECTURER` / `STUDENT`
-
-**Request Body:**
-
-```json
-{
-  "projectId": 1,
-  "repoUrl": "https://github.com/org/repo-name",
-  "repoName": "repo-name"
-}
-```
-
-| Field       | Required | Mô tả                            |
-| ----------- | -------- | -------------------------------- |
-| `projectId` | ✅       |                                  |
-| `repoUrl`   | ✅       | URL GitHub hợp lệ                |
-| `repoName`  | ❌       | Nếu bỏ qua, tự trích xuất từ URL |
-
-**Response 201:**
-
-```json
-{
-  "isSuccess": true,
-  "code": 201,
-  "message": "Repository submitted successfully",
-  "data": {
-    "repoId": 1,
-    "repoUrl": "https://github.com/org/repo-name",
-    "repoName": "repo-name",
-    "owner": "org",
-    "isSelected": false,
-    "projectId": 1,
-    "projectName": "EduTool Mobile App",
-    "projectCode": "PROJ-001",
-    "createdAt": "2026-03-08T10:00:00"
-  }
-}
-```
-
----
-
-### 11.2 Lấy danh sách repositories
-
-```
-GET /api/github/repositories?projectId=&courseId=
-```
-
-**Roles:** `ADMIN` / `LECTURER` / `STUDENT`
-
-> Phải cung cấp `projectId` **hoặc** `courseId`.
-
-**Response 200:** → `data` là `List<GithubRepositoryResponse>`
-
----
-
-### 11.3 Lấy repository theo ID
-
-```
-GET /api/github/repositories/{repoId}
-```
-
-**Response 200:** → `data` là `GithubRepositoryResponse`
-
----
-
-### 11.4 Cập nhật repository
-
-```
-PUT /api/github/repositories/{repoId}
-```
-
-**Request Body:** Giống 11.1
-
----
-
-### 11.5 Chọn repository để track commits (Admin/Lecturer)
-
-```
-PATCH /api/github/repositories/{repoId}/select
-```
-
-**Roles:** `ADMIN` / `LECTURER`
-
-> Chỉ 1 repo được chọn trong cùng 1 project. Repo đang chọn trước sẽ bị bỏ chọn.
-
-**Response 200:** → `data` là `GithubRepositoryResponse` với `isSelected: true`
-
----
-
-### 11.6 Xóa repository
-
-```
-DELETE /api/github/repositories/{repoId}
-```
-
-**Roles:** `ADMIN` / `LECTURER`
-
----
-
-### 11.7 Lấy repositories nhóm theo group trong course
-
-```
-GET /api/github/repositories/course/{courseId}/groups
-```
-
-**Roles:** `ADMIN` / `LECTURER` / `STUDENT`
-
-**Response 200:**
-
-```json
-{
-  "isSuccess": true,
-  "code": 200,
-  "message": "Retrieved 3 groups",
-  "data": [
-    {
-      "groupNumber": 1,
-      "projectId": 1,
-      "projectCode": "PROJ-001",
-      "projectName": "EduTool Mobile App",
-      "projectDescription": "...",
-      "projectTechnologies": "Flutter, Spring Boot",
-      "courseId": 1,
-      "courseCode": "SWD392",
-      "courseName": "Software Architecture Design",
-      "memberCount": 4,
-      "repoCount": 1,
-      "members": [
-        {
-          "studentId": 1,
-          "studentCode": "SE170001",
-          "fullName": "Nguyen Van A",
-          "githubUsername": "vana-github",
-          "email": "vana@fpt.edu.vn",
-          "roleInProject": "leader"
-        }
-      ],
-      "repositories": [
-        {
-          "repoId": 1,
-          "repoUrl": "https://github.com/org/repo",
-          "repoName": "repo",
-          "owner": "org",
-          "isSelected": true,
-          "projectId": 1,
-          "projectName": "EduTool Mobile App",
-          "projectCode": "PROJ-001",
-          "createdAt": "2026-03-08T10:00:00"
-        }
-      ]
-    }
-  ]
-}
-```
-
----
-
-### 11.8 Xuất báo cáo commit dạng JSON
-
-```
-GET /api/github/repositories/project/{projectId}/report/json?since=2026-03-01&until=2026-03-08
-```
-
-**Roles:** `ADMIN` / `LECTURER`
-
-| Param   | Mô tả                  |
-| ------- | ---------------------- |
-| `since` | `yyyy-MM-dd`, optional |
-| `until` | `yyyy-MM-dd`, optional |
-
-> Project phải có ít nhất 1 repository được chọn (`isSelected: true`).
-
-**Response 200:**
-
-```json
-{
-  "isSuccess": true,
-  "code": 200,
-  "message": "Report generated successfully",
-  "data": {
-    "projectId": 1,
-    "repositories": ["https://github.com/org/repo"],
-    "period": {
-      "since": "2026-03-01",
-      "until": "2026-03-08"
-    },
-    "generatedAt": "2026-03-08T10:00:00",
-    "diagnostic": {
-      "githubTokenConfigured": true,
-      "repositories": [
-        { "repository": "https://github.com/org/repo", "status": "OK" }
-      ],
-      "registeredGithubUsernames": ["vana-github", "vanb-github"]
-    },
-    "summary": [
-      {
-        "group": "Group 1",
-        "studentCode": "SE170001",
-        "fullName": "Nguyen Van A",
-        "githubUsername": "vana-github",
-        "role": "leader",
-        "totalCommits": 25,
-        "totalAdditions": 1500,
-        "totalDeletions": 200,
-        "avgCommitsPerWeek": 6.25
-      }
-    ],
-    "summaryByRepository": [
-      {
-        "group": "Group 1",
-        "studentCode": "SE170001",
-        "fullName": "Nguyen Van A",
-        "githubUsername": "vana-github",
-        "role": "leader",
-        "repository": "https://github.com/org/repo",
-        "totalCommits": 25,
-        "totalAdditions": 1500,
-        "totalDeletions": 200
-      }
-    ],
-    "weeklyDetails": [
-      {
-        "group": "Group 1",
-        "studentCode": "SE170001",
-        "fullName": "Nguyen Van A",
-        "githubUsername": "vana-github",
-        "repository": "https://github.com/org/repo",
-        "year": 2026,
-        "week": 10,
-        "commits": 8,
-        "additions": 450,
-        "deletions": 60
-      }
-    ]
-  }
-}
-```
-
----
-
-### 11.9 Xuất báo cáo commit dạng CSV
-
-```
-GET /api/github/repositories/project/{projectId}/report/csv?since=2026-03-01&until=2026-03-08
-```
-
-**Roles:** `ADMIN` / `LECTURER`
-
-> **Response:** File nhị phân `text/csv`. Flutter tải file này và upload lên Supabase Storage.
-
----
-
-### 11.10 Lưu URL báo cáo (sau khi upload Supabase)
-
-```
-POST /api/github/repositories/project/{projectId}/report/storage-url
-```
-
-**Roles:** `ADMIN` / `LECTURER`
-
-**Request Body:**
-
-```json
-{
-  "storageUrl": "https://xyz.supabase.co/storage/v1/object/public/reports/report.csv",
-  "storageKey": "reports/report.csv",
-  "storageId": "uuid-of-file",
-  "since": "2026-03-01",
-  "until": "2026-03-08"
-}
-```
-
-| Field        | Required | Mô tả                       |
-| ------------ | -------- | --------------------------- |
-| `storageUrl` | ✅       | URL công khai trên Supabase |
-| `storageKey` | ❌       | Path trong bucket           |
-| `storageId`  | ❌       | UUID của file               |
-| `since`      | ❌       | Ngày bắt đầu báo cáo        |
-| `until`      | ❌       | Ngày kết thúc báo cáo       |
-
-**Response 201:**
-
-```json
-{
-  "isSuccess": true,
-  "code": 201,
-  "message": "Report URL saved successfully",
-  "data": {
-    "commitReportId": 1,
-    "projectId": 1,
-    "storageUrl": "https://...",
-    "storageKey": "reports/report.csv",
-    "storageId": "uuid",
-    "sinceDate": "2026-03-01",
-    "untilDate": "2026-03-08",
-    "createdAt": "2026-03-08T10:00:00"
-  }
-}
-```
-
----
-
-### 11.11 Lấy danh sách URL báo cáo đã lưu
-
-```
-GET /api/github/repositories/project/{projectId}/report/storage-url
-```
-
-**Roles:** `ADMIN` / `LECTURER`
-
-**Response 200:** → `data` là `List<CommitReportUrlResponse>`
-
----
-
-### 11.12 Xóa URL báo cáo
-
-```
-DELETE /api/github/repositories/project/{projectId}/report/storage-url/{commitReportId}
-```
-
-**Roles:** `ADMIN` / `LECTURER`
-
----
-
-## 12. Ghi chú cho Flutter
-
-### Authentication Header
-
-```dart
-// Thêm vào mọi request (trừ /auth/*)
-headers: {
-  'Content-Type': 'application/json',
-  'Authorization': 'Bearer $accessToken',
-}
-```
-
-### Xử lý Token hết hạn
-
-1. Khi nhận `code: 401` → gọi `POST /auth/refresh`
-2. Nếu refresh thành công → lưu access token mới, retry request gốc
-3. Nếu refresh thất bại → redirect về màn hình Login
-
-### DateTime Format
-
-- Server trả về: `"2026-03-08T10:00:00"` → parse bằng `DateTime.parse()`
-- Gửi lên server: ISO 8601, ví dụ `"2026-03-01T00:00:00"`
-- Date only (semester): `"2026-01-01"` → `"yyyy-MM-dd"`
-
-### Enums quan trọng
-
-| Enum           | Values                                                    |
-| -------------- | --------------------------------------------------------- |
-| `Role`         | `ADMIN`, `LECTURER`, `STUDENT`                            |
-| `UserStatus`   | `ACTIVE`, `INACTIVE`, `SUSPENDED`, `VERIFICATION_PENDING` |
-| `ReportStatus` | `ACTIVE`, `INACTIVE`                                      |
-
-### Phân trang (Pagination)
-
-Khi response có phân trang, `data` có cấu trúc:
-
-```dart
-class PageResponse<T> {
-  List<T> content;
-  PageInfo page;
-}
-
-class PageInfo {
-  int pageNumber;
-  int pageSize;
-  int totalElements;
-  int totalPages;
-}
-```
-
-> Bắt đầu từ `pageNumber = 0` (zero-indexed).
-
-### Error Handling
-
-```dart
-if (!response['isSuccess']) {
-  final code = response['code'];       // 400, 401, 403, 404, 500
-  final message = response['message']; // Thông báo lỗi
-  final errors = response['errors'];   // Lỗi validation (nếu có)
-}
-```
-
-### Base URL
-
-- **Local dev:** `http://10.0.2.2:8080` (Android Emulator)
-- **Local dev:** `http://localhost:8080` (iOS Simulator)
-- **Production:** Cấu hình theo server thực tế
-
-### Cookie (Refresh Token)
-
-Server set `refreshToken` qua `Set-Cookie` header với `HttpOnly; Secure; SameSite=Strict`. Flutter cần dùng thư viện hỗ trợ cookie:
-
-```yaml
-# pubspec.yaml
-dependencies:
-  dio: ^5.0.0
-  dio_cookie_manager: ^3.0.0
-  cookie_jar: ^4.0.0
-```
-
-```dart
-final cookieJar = CookieJar();
-final dio = Dio();
-dio.interceptors.add(CookieManager(cookieJar));
-```
+**Response 200:** → `data` là `PeriodicR

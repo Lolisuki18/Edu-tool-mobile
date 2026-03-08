@@ -27,6 +27,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<AdminDeleteCourse>(_onDeleteCourse);
     on<AdminLoadEnrollments>(_onLoadEnrollments);
     on<AdminCreateEnrollment>(_onCreateEnrollment);
+    on<AdminUpdateEnrollment>(_onUpdateEnrollment);
     on<AdminDeleteEnrollment>(_onDeleteEnrollment);
     on<AdminLoadProjects>(_onLoadProjects);
     on<AdminCreateProject>(_onCreateProject);
@@ -259,10 +260,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   ) async {
     emit(const AdminLoading());
     try {
-      final data = await _repository.getEnrollments(
-        page: event.page,
-        courseId: event.courseId,
-      );
+      final data = await _repository.getEnrollments(courseId: event.courseId);
       emit(AdminEnrollmentsLoaded(data));
     } catch (e) {
       emit(AdminFailure(e.toString()));
@@ -276,6 +274,18 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     try {
       await _repository.createEnrollment(event.body);
       emit(const AdminActionSuccess('Tạo enrollment thành công'));
+    } catch (e) {
+      emit(AdminFailure(e.toString()));
+    }
+  }
+
+  Future<void> _onUpdateEnrollment(
+    AdminUpdateEnrollment event,
+    Emitter<AdminState> emit,
+  ) async {
+    try {
+      await _repository.updateEnrollment(event.id, event.body);
+      emit(const AdminActionSuccess('Cập nhật enrollment thành công'));
     } catch (e) {
       emit(AdminFailure(e.toString()));
     }

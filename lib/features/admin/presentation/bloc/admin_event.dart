@@ -122,12 +122,11 @@ class AdminDeleteCourse extends AdminEvent {
 }
 
 class AdminLoadEnrollments extends AdminEvent {
-  final int page;
-  final int? courseId;
-  const AdminLoadEnrollments({this.page = 0, this.courseId});
+  final int courseId;
+  const AdminLoadEnrollments({required this.courseId});
 
   @override
-  List<Object?> get props => [page, courseId];
+  List<Object?> get props => [courseId];
 }
 
 class AdminCreateEnrollment extends AdminEvent {
@@ -144,6 +143,15 @@ class AdminDeleteEnrollment extends AdminEvent {
 
   @override
   List<Object?> get props => [id];
+}
+
+class AdminUpdateEnrollment extends AdminEvent {
+  final String id;
+  final Map<String, dynamic> body;
+  const AdminUpdateEnrollment({required this.id, required this.body});
+
+  @override
+  List<Object?> get props => [id, body];
 }
 
 class AdminLoadProjects extends AdminEvent {
