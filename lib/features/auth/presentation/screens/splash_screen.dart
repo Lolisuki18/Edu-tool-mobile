@@ -56,6 +56,8 @@ class _SplashScreenState extends State<SplashScreen> {
           context.go('/student/dashboard');
         case 'LECTURER':
           context.go('/lecturer/dashboard');
+        case 'ADMIN':
+          context.go('/admin');
         default:
           _goLogin();
       }

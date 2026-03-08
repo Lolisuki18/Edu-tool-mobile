@@ -46,3 +46,8 @@ class AuthFailure extends AuthState {
   @override
   List<Object?> get props => [message];
 }
+
+/// Registration succeeded — user should navigate to login.
+class AuthRegisterSuccess extends AuthState {
+  const AuthRegisterSuccess();
+}

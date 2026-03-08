@@ -70,4 +70,54 @@ class AuthRepositoryImpl implements AuthRepository {
       await _apiClient.authInterceptor.clearAccessToken();
     }
   }
+
+  @override
+  Future<void> register({
+    required String fullName,
+    required String email,
+    required String username,
+    required String password,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/auth/register',
+        data: {
+          'fullName': fullName,
+          'email': email,
+          'username': username,
+          'password': password,
+        },
+      );
+
+      final base = BaseResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        null,
+      );
+
+      if (!base.isSuccess) {
+        throw ServerException(
+          message: base.message,
+          code: base.code,
+          errors: base.errors,
+        );
+      }
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      if (data is Map<String, dynamic>) {
+        throw ServerException(
+          message: data['message'] as String? ?? 'Đăng ký thất bại',
+          code: e.response?.statusCode ?? 0,
+          errors:
+              (data['errors'] as List<dynamic>?)
+                  ?.map((e) => e.toString())
+                  .toList() ??
+              const [],
+        );
+      }
+      throw ServerException(
+        message: e.message ?? 'Lỗi kết nối đến server',
+        code: e.response?.statusCode ?? 0,
+      );
+    }
+  }
 }

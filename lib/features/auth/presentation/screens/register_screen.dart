@@ -9,26 +9,26 @@ import 'package:edutool/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:edutool/features/auth/presentation/bloc/auth_event.dart';
 import 'package:edutool/features/auth/presentation/bloc/auth_state.dart';
 
-/// Login screen following EduTool Academic Design System.
-///
-/// Uses [AcademicInput] + [AcademicButton].
-/// Listens to [AuthBloc] to show loading spinner in the button and
-/// red Snackbar on [AuthFailure].
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+/// Registration screen — fullName, email, username, password.
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _fullNameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
+    _fullNameCtrl.dispose();
+    _emailCtrl.dispose();
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
@@ -38,7 +38,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     context.read<AuthBloc>().add(
-      AuthLoginRequested(
+      AuthRegisterRequested(
+        fullName: _fullNameCtrl.text.trim(),
+        email: _emailCtrl.text.trim(),
         username: _usernameCtrl.text.trim(),
         password: _passwordCtrl.text,
       ),
@@ -58,18 +60,16 @@ class _LoginScreenState extends State<LoginScreen> {
         );
     }
 
-    if (state is AuthSuccess) {
-      // Navigate based on role per user_flows_guide.md §1.
-      switch (state.role) {
-        case 'STUDENT':
-          context.go('/student/dashboard');
-        case 'LECTURER':
-          context.go('/lecturer/dashboard');
-        case 'ADMIN':
-          context.go('/admin');
-        default:
-          context.go('/login');
-      }
+    if (state is AuthRegisterSuccess) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Đăng ký thành công! Vui lòng đăng nhập.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      context.go('/login');
     }
   }
 
@@ -89,7 +89,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ── Header ──────────────────────────────────
                     const SizedBox(height: 32),
                     Icon(
                       Icons.school_rounded,
@@ -98,39 +97,75 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'EduTool',
+                      'Tạo tài khoản',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.displayLarge,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Đăng nhập để tiếp tục',
+                      'Đăng ký để bắt đầu sử dụng EduTool',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
 
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
 
-                    // ── Username / Email ─────────────────────────
                     AcademicInput(
-                      controller: _usernameCtrl,
-                      label: 'Tên đăng nhập hoặc Email',
-                      hintText: 'username hoặc email',
-                      prefixIcon: Icons.person_outline,
-                      keyboardType: TextInputType.emailAddress,
+                      controller: _fullNameCtrl,
+                      label: 'Họ và tên',
+                      hintText: 'Nguyễn Văn A',
+                      prefixIcon: Icons.badge_outlined,
                       textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.username],
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Vui lòng nhập tên đăng nhập hoặc email';
+                          return 'Vui lòng nhập họ và tên';
                         }
                         return null;
                       },
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
-                    // ── Password ─────────────────────────────────
+                    AcademicInput(
+                      controller: _emailCtrl,
+                      label: 'Email',
+                      hintText: 'example@fpt.edu.vn',
+                      prefixIcon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.email],
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập email';
+                        }
+                        if (!RegExp(
+                          r'^[^@]+@[^@]+\.[^@]+$',
+                        ).hasMatch(value.trim())) {
+                          return 'Email không hợp lệ';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    AcademicInput(
+                      controller: _usernameCtrl,
+                      label: 'Tên đăng nhập',
+                      hintText: 'username',
+                      prefixIcon: Icons.person_outline,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.newUsername],
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập tên đăng nhập';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
                     AcademicInput(
                       controller: _passwordCtrl,
                       label: 'Mật khẩu',
@@ -138,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: Icons.lock_outline,
                       obscureText: _obscurePassword,
                       textInputAction: TextInputAction.done,
-                      autofillHints: const [AutofillHints.password],
+                      autofillHints: const [AutofillHints.newPassword],
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
@@ -158,17 +193,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Vui lòng nhập mật khẩu';
                         }
+                        if (value.length < 6) {
+                          return 'Mật khẩu tối thiểu 6 ký tự';
+                        }
                         return null;
                       },
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
 
-                    // ── Login Button ─────────────────────────────
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
                         return AcademicButton(
-                          text: 'Đăng nhập',
+                          text: 'Đăng ký',
                           type: ButtonType.primary,
                           isLoading: state is AuthLoading,
                           onPressed: _submit,
@@ -182,13 +219,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Chưa có tài khoản? ',
+                          'Đã có tài khoản? ',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         GestureDetector(
-                          onTap: () => context.go('/register'),
+                          onTap: () => context.go('/login'),
                           child: Text(
-                            'Đăng ký',
+                            'Đăng nhập',
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   color: AppColors.primary,

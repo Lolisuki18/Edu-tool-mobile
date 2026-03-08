@@ -21,6 +21,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       super(const AuthInitial()) {
     on<AuthLoginRequested>(_onLoginRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
+    on<AuthRegisterRequested>(_onRegisterRequested);
   }
 
   Future<void> _onLoginRequested(
@@ -57,6 +58,28 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _repository.logout();
     } finally {
       emit(const AuthInitial());
+    }
+  }
+
+  Future<void> _onRegisterRequested(
+    AuthRegisterRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+
+    try {
+      await _repository.register(
+        fullName: event.fullName,
+        email: event.email,
+        username: event.username,
+        password: event.password,
+      );
+
+      emit(const AuthRegisterSuccess());
+    } on ServerException catch (e) {
+      emit(AuthFailure(message: e.message));
+    } catch (_) {
+      emit(const AuthFailure(message: 'Đã xảy ra lỗi. Vui lòng thử lại.'));
     }
   }
 }

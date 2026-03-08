@@ -7,9 +7,19 @@ import 'package:edutool/core/network/session_manager.dart';
 import 'package:edutool/features/auth/data/auth_repository_impl.dart';
 import 'package:edutool/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:edutool/features/auth/presentation/screens/login_screen.dart';
+import 'package:edutool/features/auth/presentation/screens/register_screen.dart';
 import 'package:edutool/features/auth/presentation/screens/splash_screen.dart';
+import 'package:edutool/features/student/data/student_repository.dart';
+import 'package:edutool/features/student/presentation/bloc/student_bloc.dart';
 import 'package:edutool/features/student/presentation/screens/student_shell.dart';
+import 'package:edutool/features/lecturer/data/lecturer_repository.dart';
+import 'package:edutool/features/lecturer/presentation/bloc/lecturer_bloc.dart';
 import 'package:edutool/features/lecturer/presentation/screens/lecturer_shell.dart';
+import 'package:edutool/features/admin/data/admin_repository.dart';
+import 'package:edutool/features/admin/presentation/bloc/admin_bloc.dart';
+import 'package:edutool/features/admin/presentation/bloc/admin_event.dart';
+import 'package:edutool/features/admin/presentation/screens/admin_shell.dart';
+import 'package:edutool/features/admin/presentation/screens/admin_dashboard_screen.dart';
 import 'package:edutool/features/project/data/project_repository_impl.dart';
 import 'package:edutool/features/project/presentation/bloc/project_bloc.dart';
 import 'package:edutool/features/project/presentation/screens/project_detail_screen.dart';
@@ -18,14 +28,6 @@ import 'package:edutool/features/report/presentation/bloc/report_bloc.dart';
 import 'package:edutool/features/report/presentation/screens/report_list_screen.dart';
 
 /// Builds the application-level [GoRouter].
-///
-/// - `/splash` – initial route; checks token & redirects.
-/// - `/login`  – wrapped in [BlocProvider] for [AuthBloc].
-/// - `/student/dashboard` – student shell with bottom nav.
-/// - `/lecturer/dashboard` – lecturer shell with bottom nav.
-///
-/// Listens to [SessionManager] so that a forced session-expiry
-/// (e.g. refresh token failure) redirects to `/login` globally.
 GoRouter buildRouter(ApiClient apiClient) {
   final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -37,10 +39,14 @@ GoRouter buildRouter(ApiClient apiClient) {
     }
   });
 
+  AuthBloc createAuthBloc() =>
+      AuthBloc(repository: AuthRepositoryImpl(apiClient: apiClient));
+
   final router = GoRouter(
     navigatorKey: navigatorKey,
     initialLocation: '/splash',
     routes: [
+      // ── Auth ─────────────────────────────────────
       GoRoute(
         path: '/splash',
         builder: (context, state) => SplashScreen(apiClient: apiClient),
@@ -48,30 +54,26 @@ GoRouter buildRouter(ApiClient apiClient) {
       GoRoute(
         path: '/login',
         builder: (context, state) => BlocProvider(
-          create: (_) =>
-              AuthBloc(repository: AuthRepositoryImpl(apiClient: apiClient)),
+          create: (_) => createAuthBloc(),
           child: const LoginScreen(),
         ),
       ),
       GoRoute(
+        path: '/register',
+        builder: (context, state) => BlocProvider(
+          create: (_) => createAuthBloc(),
+          child: const RegisterScreen(),
+        ),
+      ),
+
+      // ── Student ──────────────────────────────────
+      GoRoute(
         path: '/student/dashboard',
-        builder: (context, state) => const StudentShell(),
-      ),
-      GoRoute(
-        path: '/lecturer/dashboard',
-        builder: (context, state) => const LecturerShell(),
-      ),
-      GoRoute(
-        path: '/lecturer/project/:courseId',
-        builder: (context, state) {
-          final courseId = int.parse(state.pathParameters['courseId'] ?? '0');
-          return BlocProvider(
-            create: (_) => ProjectBloc(
-              repository: ProjectRepositoryImpl(apiClient: apiClient),
-            ),
-            child: ProjectDetailScreen(courseId: courseId),
-          );
-        },
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              StudentBloc(repository: StudentRepository(apiClient: apiClient)),
+          child: const StudentShell(),
+        ),
       ),
       GoRoute(
         path: '/student/reports/:courseId',
@@ -85,10 +87,144 @@ GoRouter buildRouter(ApiClient apiClient) {
           );
         },
       ),
+
+      // ── Lecturer ─────────────────────────────────
+      GoRoute(
+        path: '/lecturer/dashboard',
+        builder: (context, state) => BlocProvider(
+          create: (_) => LecturerBloc(
+            repository: LecturerRepository(apiClient: apiClient),
+          ),
+          child: const LecturerShell(),
+        ),
+      ),
+      GoRoute(
+        path: '/lecturer/project/:courseId',
+        builder: (context, state) {
+          final courseId = int.parse(state.pathParameters['courseId'] ?? '0');
+          return BlocProvider(
+            create: (_) => ProjectBloc(
+              repository: ProjectRepositoryImpl(apiClient: apiClient),
+            ),
+            child: ProjectDetailScreen(courseId: courseId),
+          );
+        },
+      ),
+
+      // ── Admin ────────────────────────────────────
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              AdminBloc(repository: AdminRepository(apiClient: apiClient))
+                ..add(const AdminLoadDashboard()),
+          child: const AdminShell(
+            title: 'Dashboard',
+            selectedIndex: 0,
+            child: AdminDashboardContent(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/users',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              AdminBloc(repository: AdminRepository(apiClient: apiClient)),
+          child: const AdminShell(
+            title: 'Users',
+            selectedIndex: 1,
+            child: AdminUsersScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/students',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              AdminBloc(repository: AdminRepository(apiClient: apiClient)),
+          child: const AdminShell(
+            title: 'Students',
+            selectedIndex: 2,
+            child: AdminStudentsScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/lecturers',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              AdminBloc(repository: AdminRepository(apiClient: apiClient)),
+          child: const AdminShell(
+            title: 'Lecturers',
+            selectedIndex: 3,
+            child: AdminLecturersScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/semesters',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              AdminBloc(repository: AdminRepository(apiClient: apiClient)),
+          child: const AdminShell(
+            title: 'Semesters',
+            selectedIndex: 4,
+            child: AdminSemestersScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/courses',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              AdminBloc(repository: AdminRepository(apiClient: apiClient)),
+          child: const AdminShell(
+            title: 'Courses',
+            selectedIndex: 5,
+            child: AdminCoursesScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/enrollments',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              AdminBloc(repository: AdminRepository(apiClient: apiClient)),
+          child: const AdminShell(
+            title: 'Enrollments',
+            selectedIndex: 6,
+            child: AdminEnrollmentsScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/projects',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              AdminBloc(repository: AdminRepository(apiClient: apiClient)),
+          child: const AdminShell(
+            title: 'Projects',
+            selectedIndex: 7,
+            child: AdminProjectsScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/profile',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              AdminBloc(repository: AdminRepository(apiClient: apiClient))
+                ..add(const AdminLoadDashboard()),
+          child: const AdminShell(
+            title: 'Profile',
+            selectedIndex: -1,
+            child: AdminProfileScreen(),
+          ),
+        ),
+      ),
     ],
   );
 
-  // Dispose the subscription when the router is disposed.
   router.dispose;
 
   return router;
