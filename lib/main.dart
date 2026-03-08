@@ -12,8 +12,16 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.instance.init();
 
+  // ── Base URL ─────────────────────────────────────────────────────────────
+  // Để đổi môi trường, chỉ cần thay dòng const _useProduction = true/false:
+  //   true  → production server
+  //   false → localhost (web & desktop: 8080, Android emulator: 10.0.2.2:8080)
+  const bool useProduction = true;
+
   final String baseUrl;
-  if (kIsWeb) {
+  if (useProduction) {
+    baseUrl = 'https://edu-tool-be.onrender.com';
+  } else if (kIsWeb) {
     baseUrl = 'http://localhost:8080'; // Chrome/web
   } else if (defaultTargetPlatform == TargetPlatform.android) {
     baseUrl = 'http://10.0.2.2:8080'; // Android emulator
