@@ -54,6 +54,22 @@ class AdminLoadStudents extends AdminEvent {
   List<Object?> get props => [page, search];
 }
 
+class AdminCreateStudent extends AdminEvent {
+  final Map<String, dynamic> body;
+  const AdminCreateStudent(this.body);
+
+  @override
+  List<Object?> get props => [body];
+}
+
+class AdminDeleteStudent extends AdminEvent {
+  final String id;
+  const AdminDeleteStudent(this.id);
+
+  @override
+  List<Object?> get props => [id];
+}
+
 class AdminLoadLecturers extends AdminEvent {
   final int page;
   final String? search;
@@ -61,6 +77,22 @@ class AdminLoadLecturers extends AdminEvent {
 
   @override
   List<Object?> get props => [page, search];
+}
+
+class AdminCreateLecturer extends AdminEvent {
+  final Map<String, dynamic> body;
+  const AdminCreateLecturer(this.body);
+
+  @override
+  List<Object?> get props => [body];
+}
+
+class AdminDeleteLecturer extends AdminEvent {
+  final String id;
+  const AdminDeleteLecturer(this.id);
+
+  @override
+  List<Object?> get props => [id];
 }
 
 class AdminLoadSemesters extends AdminEvent {
@@ -169,6 +201,15 @@ class AdminCreateProject extends AdminEvent {
 
   @override
   List<Object?> get props => [body];
+}
+
+class AdminUpdateProject extends AdminEvent {
+  final String id;
+  final Map<String, dynamic> body;
+  const AdminUpdateProject({required this.id, required this.body});
+
+  @override
+  List<Object?> get props => [id, body];
 }
 
 class AdminDeleteProject extends AdminEvent {

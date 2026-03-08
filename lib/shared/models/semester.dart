@@ -6,12 +6,14 @@ class Semester extends Equatable {
   final String name;
   final String startDate;
   final String endDate;
+  final bool status;
 
   const Semester({
     required this.semesterId,
     required this.name,
     required this.startDate,
     required this.endDate,
+    this.status = true,
   });
 
   factory Semester.fromJson(Map<String, dynamic> json) {
@@ -20,24 +22,20 @@ class Semester extends Equatable {
       name: json['semesterName'] as String? ?? json['name'] as String? ?? '',
       startDate: json['startDate']?.toString() ?? '',
       endDate: json['endDate']?.toString() ?? '',
+      status: json['status'] as bool? ?? true,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'semesterId': semesterId,
-    'name': name,
+    'semesterName': name,
     'startDate': startDate,
     'endDate': endDate,
+    'status': status,
   };
 
-  bool get isActive {
-    try {
-      return DateTime.parse(endDate).isAfter(DateTime.now());
-    } catch (_) {
-      return false;
-    }
-  }
+  bool get isActive => status;
 
   @override
-  List<Object?> get props => [semesterId, name, startDate, endDate];
+  List<Object?> get props => [semesterId, name, startDate, endDate, status];
 }

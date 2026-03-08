@@ -16,7 +16,11 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<AdminUpdateUser>(_onUpdateUser);
     on<AdminDeleteUser>(_onDeleteUser);
     on<AdminLoadStudents>(_onLoadStudents);
+    on<AdminCreateStudent>(_onCreateStudent);
+    on<AdminDeleteStudent>(_onDeleteStudent);
     on<AdminLoadLecturers>(_onLoadLecturers);
+    on<AdminCreateLecturer>(_onCreateLecturer);
+    on<AdminDeleteLecturer>(_onDeleteLecturer);
     on<AdminLoadSemesters>(_onLoadSemesters);
     on<AdminCreateSemester>(_onCreateSemester);
     on<AdminUpdateSemester>(_onUpdateSemester);
@@ -31,6 +35,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<AdminDeleteEnrollment>(_onDeleteEnrollment);
     on<AdminLoadProjects>(_onLoadProjects);
     on<AdminCreateProject>(_onCreateProject);
+    on<AdminUpdateProject>(_onUpdateProject);
     on<AdminDeleteProject>(_onDeleteProject);
     on<AdminChangePassword>(_onChangePassword);
   }
@@ -132,6 +137,30 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     }
   }
 
+  Future<void> _onCreateStudent(
+    AdminCreateStudent event,
+    Emitter<AdminState> emit,
+  ) async {
+    try {
+      await _repository.createStudent(event.body);
+      emit(const AdminActionSuccess('Tạo sinh viên thành công'));
+    } catch (e) {
+      emit(AdminFailure(e.toString()));
+    }
+  }
+
+  Future<void> _onDeleteStudent(
+    AdminDeleteStudent event,
+    Emitter<AdminState> emit,
+  ) async {
+    try {
+      await _repository.deleteStudent(event.id);
+      emit(const AdminActionSuccess('Xóa sinh viên thành công'));
+    } catch (e) {
+      emit(AdminFailure(e.toString()));
+    }
+  }
+
   // ── Lecturers ─────────────────────────────────────────────────────
 
   Future<void> _onLoadLecturers(
@@ -145,6 +174,30 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         search: event.search,
       );
       emit(AdminLecturersLoaded(data));
+    } catch (e) {
+      emit(AdminFailure(e.toString()));
+    }
+  }
+
+  Future<void> _onCreateLecturer(
+    AdminCreateLecturer event,
+    Emitter<AdminState> emit,
+  ) async {
+    try {
+      await _repository.createLecturer(event.body);
+      emit(const AdminActionSuccess('Tạo giảng viên thành công'));
+    } catch (e) {
+      emit(AdminFailure(e.toString()));
+    }
+  }
+
+  Future<void> _onDeleteLecturer(
+    AdminDeleteLecturer event,
+    Emitter<AdminState> emit,
+  ) async {
+    try {
+      await _repository.deleteLecturer(event.id);
+      emit(const AdminActionSuccess('Xóa giảng viên thành công'));
     } catch (e) {
       emit(AdminFailure(e.toString()));
     }
@@ -328,6 +381,18 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     try {
       await _repository.createProject(event.body);
       emit(const AdminActionSuccess('Tạo project thành công'));
+    } catch (e) {
+      emit(AdminFailure(e.toString()));
+    }
+  }
+
+  Future<void> _onUpdateProject(
+    AdminUpdateProject event,
+    Emitter<AdminState> emit,
+  ) async {
+    try {
+      await _repository.updateProject(event.id, event.body);
+      emit(const AdminActionSuccess('Cập nhật project thành công'));
     } catch (e) {
       emit(AdminFailure(e.toString()));
     }
