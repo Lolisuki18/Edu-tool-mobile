@@ -25,7 +25,7 @@ class Course extends Equatable {
       courseId: json['courseId']?.toString() ?? '',
       courseCode: json['courseCode'] as String? ?? '',
       courseName: json['courseName'] as String? ?? '',
-      status: json['status'] as String? ?? '',
+      status: json['status']?.toString() ?? '',
       semester: json['semester'] != null
           ? Semester.fromJson(json['semester'] as Map<String, dynamic>)
           : null,

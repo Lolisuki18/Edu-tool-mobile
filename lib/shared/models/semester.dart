@@ -17,9 +17,9 @@ class Semester extends Equatable {
   factory Semester.fromJson(Map<String, dynamic> json) {
     return Semester(
       semesterId: json['semesterId']?.toString() ?? '',
-      name: json['name'] as String? ?? '',
-      startDate: json['startDate'] as String? ?? '',
-      endDate: json['endDate'] as String? ?? '',
+      name: json['semesterName'] as String? ?? json['name'] as String? ?? '',
+      startDate: json['startDate']?.toString() ?? '',
+      endDate: json['endDate']?.toString() ?? '',
     );
   }
 

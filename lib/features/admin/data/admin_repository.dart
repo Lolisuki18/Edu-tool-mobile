@@ -308,14 +308,29 @@ class AdminRepository {
         path,
         queryParameters: queryParameters,
       );
-      final base = BaseResponse<List<dynamic>>.fromJson(
-        response.data as Map<String, dynamic>,
-        (json) => json as List<dynamic>,
+
+      final raw = response.data;
+
+      // Raw JSON array response
+      if (raw is List) {
+        return raw.map((e) => e as Map<String, dynamic>).toList();
+      }
+
+      // BaseResponse wrapper
+      final base = BaseResponse<dynamic>.fromJson(
+        raw as Map<String, dynamic>,
+        (json) => json,
       );
-      if (!base.isSuccess || base.data == null) {
+      if (!base.isSuccess) {
         throw ServerException(message: base.message, code: base.code);
       }
-      return base.data!.map((e) => e as Map<String, dynamic>).toList();
+
+      final data = base.data;
+      if (data is List) {
+        return data.map((e) => e as Map<String, dynamic>).toList();
+      }
+
+      return [];
     } on DioException catch (e) {
       throw _mapDio(e, 'Request failed');
     }

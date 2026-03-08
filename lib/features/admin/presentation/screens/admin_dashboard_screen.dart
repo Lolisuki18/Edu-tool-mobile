@@ -270,8 +270,12 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             buildWhen: (p, c) =>
                 c is AdminUsersLoaded || c is AdminLoading || c is AdminFailure,
             builder: (context, state) {
-              if (state is AdminLoading)
+              if (state is AdminLoading) {
                 return const Center(child: CircularProgressIndicator());
+              }
+              if (state is AdminFailure) {
+                return Center(child: Text('Lỗi: ${state.message}'));
+              }
               if (state is! AdminUsersLoaded) return const SizedBox.shrink();
               final users = state.data.content;
               if (users.isEmpty)
@@ -357,10 +361,15 @@ class _AdminStudentsScreenState extends State<AdminStudentsScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AdminBloc, AdminState>(
-      buildWhen: (p, c) => c is AdminStudentsLoaded || c is AdminLoading,
+      buildWhen: (p, c) =>
+          c is AdminStudentsLoaded || c is AdminLoading || c is AdminFailure,
       builder: (context, state) {
-        if (state is AdminLoading)
+        if (state is AdminLoading) {
           return const Center(child: CircularProgressIndicator());
+        }
+        if (state is AdminFailure) {
+          return Center(child: Text('Lỗi: ${state.message}'));
+        }
         if (state is! AdminStudentsLoaded) return const SizedBox.shrink();
         final students = state.data.content;
         if (students.isEmpty)
@@ -432,10 +441,15 @@ class _AdminLecturersScreenState extends State<AdminLecturersScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AdminBloc, AdminState>(
-      buildWhen: (p, c) => c is AdminLecturersLoaded || c is AdminLoading,
+      buildWhen: (p, c) =>
+          c is AdminLecturersLoaded || c is AdminLoading || c is AdminFailure,
       builder: (context, state) {
-        if (state is AdminLoading)
+        if (state is AdminLoading) {
           return const Center(child: CircularProgressIndicator());
+        }
+        if (state is AdminFailure) {
+          return Center(child: Text('Lỗi: ${state.message}'));
+        }
         if (state is! AdminLecturersLoaded) return const SizedBox.shrink();
         final lecturers = state.data.content;
         if (lecturers.isEmpty)
@@ -579,10 +593,15 @@ class AdminSemestersScreen extends StatelessWidget {
           context.read<AdminBloc>().add(const AdminLoadSemesters());
         }
       },
-      buildWhen: (p, c) => c is AdminSemestersLoaded || c is AdminLoading,
+      buildWhen: (p, c) =>
+          c is AdminSemestersLoaded || c is AdminLoading || c is AdminFailure,
       builder: (context, state) {
-        if (state is AdminLoading)
+        if (state is AdminLoading) {
           return const Center(child: CircularProgressIndicator());
+        }
+        if (state is AdminFailure) {
+          return Center(child: Text('Lỗi: ${state.message}'));
+        }
         if (state is! AdminSemestersLoaded) return const SizedBox.shrink();
         final semesters = state.semesters;
 
@@ -730,10 +749,15 @@ class AdminCoursesScreen extends StatelessWidget {
           context.read<AdminBloc>().add(const AdminLoadCourses());
         }
       },
-      buildWhen: (p, c) => c is AdminCoursesLoaded || c is AdminLoading,
+      buildWhen: (p, c) =>
+          c is AdminCoursesLoaded || c is AdminLoading || c is AdminFailure,
       builder: (context, state) {
-        if (state is AdminLoading)
+        if (state is AdminLoading) {
           return const Center(child: CircularProgressIndicator());
+        }
+        if (state is AdminFailure) {
+          return Center(child: Text('Lỗi: ${state.message}'));
+        }
         if (state is! AdminCoursesLoaded) return const SizedBox.shrink();
         final courses = state.courses;
 
@@ -847,10 +871,15 @@ class _AdminProjectsScreenState extends State<AdminProjectsScreen> {
           context.read<AdminBloc>().add(AdminLoadProjects(page: _page));
         }
       },
-      buildWhen: (p, c) => c is AdminProjectsLoaded || c is AdminLoading,
+      buildWhen: (p, c) =>
+          c is AdminProjectsLoaded || c is AdminLoading || c is AdminFailure,
       builder: (context, state) {
-        if (state is AdminLoading)
+        if (state is AdminLoading) {
           return const Center(child: CircularProgressIndicator());
+        }
+        if (state is AdminFailure) {
+          return Center(child: Text('Lỗi: ${state.message}'));
+        }
         if (state is! AdminProjectsLoaded) return const SizedBox.shrink();
         final projects = state.data.content;
         if (projects.isEmpty)
@@ -946,10 +975,15 @@ class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
           context.read<AdminBloc>().add(AdminLoadEnrollments(page: _page));
         }
       },
-      buildWhen: (p, c) => c is AdminEnrollmentsLoaded || c is AdminLoading,
+      buildWhen: (p, c) =>
+          c is AdminEnrollmentsLoaded || c is AdminLoading || c is AdminFailure,
       builder: (context, state) {
-        if (state is AdminLoading)
+        if (state is AdminLoading) {
           return const Center(child: CircularProgressIndicator());
+        }
+        if (state is AdminFailure) {
+          return Center(child: Text('Lỗi: ${state.message}'));
+        }
         if (state is! AdminEnrollmentsLoaded) return const SizedBox.shrink();
         final enrollments = state.data.content;
         if (enrollments.isEmpty)
