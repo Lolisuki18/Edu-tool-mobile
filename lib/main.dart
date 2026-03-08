@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 
 import 'package:edutool/core/network/api_client.dart';
 import 'package:edutool/core/router/app_router.dart';
@@ -7,7 +10,16 @@ import 'package:edutool/core/theme/app_theme.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final apiClient = ApiClient(baseUrl: 'http://10.0.2.2:8080');
+  final String baseUrl;
+  if (kIsWeb) {
+    baseUrl = 'http://localhost:8080'; // Chrome/web
+  } else if (defaultTargetPlatform == TargetPlatform.android) {
+    baseUrl = 'http://10.0.2.2:8080'; // Android emulator
+  } else {
+    baseUrl = 'http://localhost:8080'; // Windows / iOS / macOS / Linux desktop
+  }
+
+  final apiClient = ApiClient(baseUrl: baseUrl);
   final router = buildRouter(apiClient);
 
   runApp(EduToolApp(router: router));

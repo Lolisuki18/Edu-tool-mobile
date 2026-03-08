@@ -68,7 +68,6 @@ class AuthRepositoryImpl implements AuthRepository {
       await _apiClient.dio.post('/auth/logout');
     } finally {
       await _apiClient.authInterceptor.clearAccessToken();
-      _apiClient.cookieJar.deleteAll();
     }
   }
 }

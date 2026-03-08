@@ -25,8 +25,11 @@ class BaseResponse<T> {
     Map<String, dynamic> json,
     T Function(Object? json)? fromJsonT,
   ) {
+    // BE có thể trả về "isSuccess" hoặc "success"
+    final isSuccess =
+        json['isSuccess'] as bool? ?? json['success'] as bool? ?? false;
     return BaseResponse<T>(
-      isSuccess: json['isSuccess'] as bool? ?? false,
+      isSuccess: isSuccess,
       code: json['code'] as int? ?? 0,
       message: json['message'] as String? ?? '',
       data: json['data'] != null && fromJsonT != null
