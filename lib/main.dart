@@ -6,9 +6,11 @@ import 'package:flutter/foundation.dart'
 import 'package:edutool/core/network/api_client.dart';
 import 'package:edutool/core/router/app_router.dart';
 import 'package:edutool/core/theme/app_theme.dart';
+import 'package:edutool/shared/services/notification_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.instance.init();
 
   final String baseUrl;
   if (kIsWeb) {

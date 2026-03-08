@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:edutool/core/theme/app_colors.dart';
 import 'package:edutool/shared/models/models.dart';
+import 'package:edutool/shared/services/notification_service.dart';
+import 'package:edutool/shared/widgets/notification_widgets.dart';
 import 'package:edutool/features/lecturer/presentation/bloc/lecturer_bloc.dart';
 import 'package:edutool/features/lecturer/presentation/bloc/lecturer_event.dart';
 import 'package:edutool/features/lecturer/presentation/bloc/lecturer_state.dart';
@@ -30,47 +32,62 @@ class _LecturerShellState extends State<LecturerShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: const [
-          _HomeTab(),
-          _GroupsTab(),
-          _ProjectsTab(),
-          _ReportsTab(),
-          _ProfileTab(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Tổng quan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.group_outlined),
-            selectedIcon: Icon(Icons.group),
-            label: 'Nhóm',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.code_outlined),
-            selectedIcon: Icon(Icons.code),
-            label: 'Project',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assessment_outlined),
-            selectedIcon: Icon(Icons.assessment),
-            label: 'Báo cáo',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Cá nhân',
-          ),
-        ],
+    return BlocListener<LecturerBloc, LecturerState>(
+      listener: (context, state) {
+        if (state is LecturerActionSuccess) {
+          NotificationService.instance.show(
+            title: 'Lecturer',
+            body: state.message,
+            payload: 'lecturer_action',
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('EduTool'),
+          actions: const [NotificationBell()],
+        ),
+        body: IndexedStack(
+          index: _currentIndex,
+          children: const [
+            _HomeTab(),
+            _GroupsTab(),
+            _ProjectsTab(),
+            _ReportsTab(),
+            _ProfileTab(),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (i) => setState(() => _currentIndex = i),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'Tổng quan',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.group_outlined),
+              selectedIcon: Icon(Icons.group),
+              label: 'Nhóm',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.code_outlined),
+              selectedIcon: Icon(Icons.code),
+              label: 'Project',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.assessment_outlined),
+              selectedIcon: Icon(Icons.assessment),
+              label: 'Báo cáo',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Cá nhân',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -244,17 +261,19 @@ class _GroupsTabState extends State<_GroupsTab> {
           .read<LecturerBloc>()
           .repository
           .getGroupsByCourse(courseId);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _groups = groups;
           _loading = false;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.toString();
           _loading = false;
         });
+      }
     }
   }
 
@@ -263,8 +282,9 @@ class _GroupsTabState extends State<_GroupsTab> {
     return BlocBuilder<LecturerBloc, LecturerState>(
       buildWhen: (p, c) => c is LecturerDashboardLoaded,
       builder: (context, state) {
-        if (state is! LecturerDashboardLoaded)
+        if (state is! LecturerDashboardLoaded) {
           return const Center(child: CircularProgressIndicator());
+        }
         final courses = state.courses;
         return SafeArea(
           child: Column(
@@ -305,12 +325,14 @@ class _GroupsTabState extends State<_GroupsTab> {
   }
 
   Widget _buildContent() {
-    if (_selectedCourseId == null)
+    if (_selectedCourseId == null) {
       return const Center(child: Text('Chọn một môn học'));
+    }
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return Center(child: Text(_error!));
-    if (_groups == null || _groups!.isEmpty)
+    if (_groups == null || _groups!.isEmpty) {
       return const Center(child: _EmptyMsg(message: 'Chưa có nhóm'));
+    }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -357,17 +379,19 @@ class _ProjectsTabState extends State<_ProjectsTab> {
           .read<LecturerBloc>()
           .repository
           .getProjectsByCourse(courseId);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _projects = projects;
           _loading = false;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.toString();
           _loading = false;
         });
+      }
     }
   }
 
@@ -474,8 +498,9 @@ class _ProjectsTabState extends State<_ProjectsTab> {
       },
       buildWhen: (p, c) => c is LecturerDashboardLoaded,
       builder: (context, state) {
-        if (state is! LecturerDashboardLoaded)
+        if (state is! LecturerDashboardLoaded) {
           return const Center(child: CircularProgressIndicator());
+        }
         final courses = state.courses;
         return SafeArea(
           child: Column(
@@ -516,8 +541,9 @@ class _ProjectsTabState extends State<_ProjectsTab> {
   }
 
   Widget _buildContent() {
-    if (_selectedCourseId == null)
+    if (_selectedCourseId == null) {
       return const Center(child: Text('Chọn một môn học'));
+    }
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return Center(child: Text(_error!));
 
@@ -670,11 +696,12 @@ class _CommitReportSectionState extends State<_CommitReportSection> {
         );
         all.addAll(projects);
       }
-      if (mounted)
+      if (mounted) {
         setState(() {
           _allProjects = all;
           _projectsLoading = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _projectsLoading = false);
     }
@@ -715,17 +742,19 @@ class _CommitReportSectionState extends State<_CommitReportSection> {
             since: _since,
             until: _until,
           );
-      if (mounted)
+      if (mounted) {
         setState(() {
           _reportData = data;
           _loading = false;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.toString();
           _loading = false;
         });
+      }
     }
   }
 
@@ -740,10 +769,11 @@ class _CommitReportSectionState extends State<_CommitReportSection> {
       final formatted =
           '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
       setState(() {
-        if (isSince)
+        if (isSince) {
           _since = formatted;
-        else
+        } else {
           _until = formatted;
+        }
       });
     }
   }
@@ -768,7 +798,7 @@ class _CommitReportSectionState extends State<_CommitReportSection> {
               labelText: 'Chọn Project',
               border: OutlineInputBorder(),
             ),
-            value: _selectedProjectId,
+            initialValue: _selectedProjectId,
             items: _allProjects
                 .map(
                   (p) => DropdownMenuItem(
@@ -820,8 +850,9 @@ class _CommitReportSectionState extends State<_CommitReportSection> {
 
   Widget _buildReportView() {
     final summary = (_reportData!['summary'] as List<dynamic>?) ?? [];
-    if (summary.isEmpty)
+    if (summary.isEmpty) {
       return const _EmptyMsg(message: 'Không có dữ liệu commit');
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1061,7 +1092,7 @@ class _PeriodicReportSectionState extends State<_PeriodicReportSection> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  value: _selectedCourseId,
+                  initialValue: _selectedCourseId,
                   decoration: const InputDecoration(
                     labelText: 'Chọn môn học',
                     border: OutlineInputBorder(),

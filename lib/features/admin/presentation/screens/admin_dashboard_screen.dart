@@ -280,8 +280,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               }
               if (state is! AdminUsersLoaded) return const SizedBox.shrink();
               final users = state.data.content;
-              if (users.isEmpty)
+              if (users.isEmpty) {
                 return const Center(child: Text('Không có dữ liệu'));
+              }
 
               return Column(
                 children: [
@@ -374,8 +375,9 @@ class _AdminStudentsScreenState extends State<AdminStudentsScreen> {
         }
         if (state is! AdminStudentsLoaded) return const SizedBox.shrink();
         final students = state.data.content;
-        if (students.isEmpty)
+        if (students.isEmpty) {
           return const Center(child: Text('Không có dữ liệu'));
+        }
 
         return Column(
           children: [
@@ -454,8 +456,9 @@ class _AdminLecturersScreenState extends State<AdminLecturersScreen> {
         }
         if (state is! AdminLecturersLoaded) return const SizedBox.shrink();
         final lecturers = state.data.content;
-        if (lecturers.isEmpty)
+        if (lecturers.isEmpty) {
           return const Center(child: Text('Không có dữ liệu'));
+        }
 
         return Column(
           children: [
@@ -884,8 +887,9 @@ class _AdminProjectsScreenState extends State<AdminProjectsScreen> {
         }
         if (state is! AdminProjectsLoaded) return const SizedBox.shrink();
         final projects = state.data.content;
-        if (projects.isEmpty)
+        if (projects.isEmpty) {
           return const Center(child: Text('Không có dữ liệu'));
+        }
 
         return Column(
           children: [
@@ -1070,7 +1074,7 @@ class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: DropdownButtonFormField<int>(
-            value: _selectedCourseId,
+            initialValue: _selectedCourseId,
             decoration: const InputDecoration(
               labelText: 'Chọn môn học',
               border: OutlineInputBorder(),

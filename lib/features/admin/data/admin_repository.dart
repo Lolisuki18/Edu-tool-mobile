@@ -240,8 +240,9 @@ class AdminRepository {
         response.data as Map<String, dynamic>,
         null,
       );
-      if (!base.isSuccess)
+      if (!base.isSuccess) {
         throw ServerException(message: base.message, code: base.code);
+      }
     } on DioException catch (e) {
       throw _mapDio(e, 'Không thể đổi mật khẩu');
     }
@@ -434,8 +435,9 @@ class AdminRepository {
         response.data as Map<String, dynamic>,
         null,
       );
-      if (!base.isSuccess)
+      if (!base.isSuccess) {
         throw ServerException(message: base.message, code: base.code);
+      }
     } on DioException catch (e) {
       throw _mapDio(e, 'Request failed');
     }
@@ -448,16 +450,19 @@ class AdminRepository {
         queryParameters: paginated ? {'page': 0, 'size': 1} : null,
       );
       final raw = response.data as Map<String, dynamic>;
-      if (raw.containsKey('totalElements'))
+      if (raw.containsKey('totalElements')) {
         return raw['totalElements'] as int? ?? 0;
+      }
       if (raw.containsKey('data')) {
         final data = raw['data'];
-        if (data is Map && data.containsKey('totalElements'))
+        if (data is Map && data.containsKey('totalElements')) {
           return data['totalElements'] as int? ?? 0;
+        }
         if (data is List) return data.length;
       }
-      if (raw.containsKey('content'))
+      if (raw.containsKey('content')) {
         return raw['totalElements'] as int? ?? (raw['content'] as List).length;
+      }
       return 0;
     } catch (_) {
       return 0;

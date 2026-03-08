@@ -8,6 +8,8 @@ import 'package:edutool/features/student/data/student_repository.dart';
 import 'package:edutool/features/student/presentation/bloc/student_bloc.dart';
 import 'package:edutool/features/student/presentation/bloc/student_event.dart';
 import 'package:edutool/features/student/presentation/bloc/student_state.dart';
+import 'package:edutool/shared/services/notification_service.dart';
+import 'package:edutool/shared/widgets/notification_widgets.dart';
 import 'package:edutool/features/project/data/models/group_detail_response.dart';
 
 /// Student bottom-nav shell with 4 tabs: Home, Groups, Reports, Profile.
@@ -29,36 +31,56 @@ class _StudentShellState extends State<StudentShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: const [_HomeTab(), _CoursesTab(), _GroupTab(), _ProfileTab()],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Tổng quan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book),
-            label: 'Môn học',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.group_outlined),
-            selectedIcon: Icon(Icons.group),
-            label: 'Nhóm',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Cá nhân',
-          ),
-        ],
+    return BlocListener<StudentBloc, StudentState>(
+      listener: (context, state) {
+        if (state is StudentActionSuccess) {
+          NotificationService.instance.show(
+            title: 'Student',
+            body: state.message,
+            payload: 'student_action',
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('EduTool'),
+          actions: const [NotificationBell()],
+        ),
+        body: IndexedStack(
+          index: _currentIndex,
+          children: const [
+            _HomeTab(),
+            _CoursesTab(),
+            _GroupTab(),
+            _ProfileTab(),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (i) => setState(() => _currentIndex = i),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'Tổng quan',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.menu_book_outlined),
+              selectedIcon: Icon(Icons.menu_book),
+              label: 'Môn học',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.group_outlined),
+              selectedIcon: Icon(Icons.group),
+              label: 'Nhóm',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Cá nhân',
+            ),
+          ],
+        ),
       ),
     );
   }
