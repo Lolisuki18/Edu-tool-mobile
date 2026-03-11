@@ -10,9 +10,11 @@ import 'package:edutool/shared/services/notification_service.dart';
 import 'package:edutool/core/constants/app_constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await NotificationService.instance.init();
 
   // Initialize Supabase
@@ -28,21 +30,10 @@ void main() async {
   OneSignal.Notifications.requestPermission(true);
 
   // ── Base URL ─────────────────────────────────────────────────────────────
-  // Để đổi môi trường, chỉ cần thay dòng const _useProduction = true/false:
-  //   true  → production server
-  //   false → localhost (web & desktop: 8080, Android emulator: 10.0.2.2:8080)
-  const bool useProduction = true;
-
-  final String baseUrl;
-  if (useProduction) {
-    baseUrl = 'https://edu-tool-be.onrender.com';
-  } else if (kIsWeb) {
-    baseUrl = 'http://localhost:8080'; // Chrome/web
-  } else if (defaultTargetPlatform == TargetPlatform.android) {
-    baseUrl = 'http://10.0.2.2:8080'; // Android emulator
-  } else {
-    baseUrl = 'http://localhost:8080'; // Windows / iOS / macOS / Linux desktop
-  }
+  // Lấy baseUrl thiết lập từ file .env.
+  // Nếu trong file .env không khai báo biến API_BASE_URL,
+  // thì mặc định sẽ chạy hàm fallback lấy Localhost tùy theo nền tảng.
+  final String baseUrl = dotenv.env['API_BASE_URL'] ?? _getFallbackBaseUrl();
 
   final apiClient = ApiClient(baseUrl: baseUrl);
   final router = buildRouter(apiClient);
@@ -64,4 +55,15 @@ class EduToolApp extends StatelessWidget {
       routerConfig: router,
     );
   }
+}
+
+/// Fallback URL sử dụng cho môi trường Develop Localhost
+/// khi bị thiếu thiết lập API_BASE_URL trong tệp .env
+String _getFallbackBaseUrl() {
+  if (kIsWeb) {
+    return 'http://localhost:8080';
+  } else if (defaultTargetPlatform == TargetPlatform.android) {
+    return 'http://10.0.2.2:8080';
+  }
+  return 'http://localhost:8080';
 }

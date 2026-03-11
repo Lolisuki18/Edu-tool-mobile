@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// Application-wide constants.
 abstract final class AppConstants {
   static const String appName = 'EduTool';
@@ -6,12 +8,11 @@ abstract final class AppConstants {
   static const int defaultPageSize = 10;
 
   /// Supabase Configuration
-  static const String supabaseUrl = 'https://rpyvyzwucfwufkoxwlnv.supabase.co';
-  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJweXZ5end1Y2Z3dWZrb3h3bG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3OTY1NzAsImV4cCI6MjA4ODM3MjU3MH0.t8kEHwy1f3dbtzJndGgiiOsSsxhc2ADTsW_UZDUGP-8';
+  static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
+  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
 
   /// OneSignal Configuration
-  /// TODO: Thay thế bằng OneSignal App ID thực tế của bạn
-  static const String oneSignalAppId = 'YOUR_ONESIGNAL_APP_ID_HERE';
+  static String get oneSignalAppId => dotenv.env['ONESIGNAL_APP_ID'] ?? '';
 
   /// Secure-storage keys.
   static const String accessTokenKey = 'access_token';
