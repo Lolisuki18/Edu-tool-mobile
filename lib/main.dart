@@ -7,10 +7,25 @@ import 'package:edutool/core/network/api_client.dart';
 import 'package:edutool/core/router/app_router.dart';
 import 'package:edutool/core/theme/app_theme.dart';
 import 'package:edutool/shared/services/notification_service.dart';
+import 'package:edutool/core/constants/app_constants.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.instance.init();
+
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: AppConstants.supabaseUrl,
+    anonKey: AppConstants.supabaseAnonKey,
+  );
+
+  // Initialize OneSignal Push Notifications
+  OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+  OneSignal.initialize(AppConstants.oneSignalAppId);
+  // Request permission for push notifications
+  OneSignal.Notifications.requestPermission(true);
 
   // ── Base URL ─────────────────────────────────────────────────────────────
   // Để đổi môi trường, chỉ cần thay dòng const _useProduction = true/false:
