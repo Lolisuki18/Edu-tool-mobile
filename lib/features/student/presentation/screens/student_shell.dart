@@ -513,6 +513,57 @@ class _ProfileTab extends StatelessWidget {
     );
   }
 
+  void _showUpdateGithubDialog(BuildContext context, String current) {
+    final githubCtrl = TextEditingController(text: current == 'N/A' ? '' : current);
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cập nhật GitHub'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: githubCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'GitHub Username',
+                  hintText: 'VD: student1git',
+                  prefixIcon: Icon(Icons.code),
+                ),
+                validator: (v) => v == null || v.isEmpty ? 'Bắt buộc' : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (!formKey.currentState!.validate()) return;
+              final student = (context.read<StudentBloc>().state as StudentDashboardLoaded).student;
+              if (student == null) return;
+              
+              context.read<StudentBloc>().add(
+                StudentUpdateGithubUsername(
+                  studentId: student.studentId,
+                  githubUsername: githubCtrl.text.trim(),
+                ),
+              );
+              Navigator.pop(ctx);
+            },
+            child: const Text('Cập nhật'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<StudentBloc, StudentState>(
@@ -595,6 +646,10 @@ class _ProfileTab extends StatelessWidget {
                         icon: Icons.code,
                         label: 'GitHub',
                         value: student?.githubUsername ?? 'N/A',
+                        trailing: IconButton(
+                          icon: const Icon(Icons.edit, size: 20),
+                          onPressed: () => _showUpdateGithubDialog(context, student?.githubUsername ?? 'N/A'),
+                        ),
                       ),
                       const Divider(height: 24),
                       _InfoTile(
@@ -884,11 +939,13 @@ class _InfoTile extends StatelessWidget {
   final String label;
   final String value;
   final Color? valueColor;
+  final Widget? trailing;
   const _InfoTile({
     required this.icon,
     required this.label,
     required this.value,
     this.valueColor,
+    this.trailing,
   });
 
   @override
@@ -903,6 +960,10 @@ class _InfoTile extends StatelessWidget {
           value,
           style: TextStyle(fontWeight: FontWeight.w600, color: valueColor),
         ),
+        if (trailing != null) ...[
+          const SizedBox(width: 8),
+          trailing!,
+        ],
       ],
     );
   }

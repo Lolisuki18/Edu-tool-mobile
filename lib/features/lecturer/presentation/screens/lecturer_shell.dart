@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:edutool/core/theme/app_colors.dart';
 import 'package:edutool/shared/models/models.dart';
@@ -778,6 +779,36 @@ class _CommitReportSectionState extends State<_CommitReportSection> {
     }
   }
 
+  Future<void> _exportCsv() async {
+    if (_selectedProjectId == null) return;
+    setState(() => _loading = true);
+    try {
+      final url = await context
+          .read<LecturerBloc>()
+          .repository
+          .getReportStorageUrl(_selectedProjectId!);
+
+      final uri = Uri.tryParse(url);
+      if (uri != null && await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Không thể tải xuống báo cáo này.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -834,10 +865,24 @@ class _CommitReportSectionState extends State<_CommitReportSection> {
         ),
         const SizedBox(height: 16),
 
-        FilledButton.icon(
-          onPressed: _selectedProjectId != null ? _generateReport : null,
-          icon: const Icon(Icons.assessment),
-          label: const Text('Xuất báo cáo'),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: (_selectedProjectId != null && !_loading) ? _generateReport : null,
+                icon: const Icon(Icons.assessment),
+                label: const Text('Xem báo cáo'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: (_selectedProjectId != null && !_loading) ? _exportCsv : null,
+                icon: const Icon(Icons.download),
+                label: const Text('Xuất CSV'),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
 

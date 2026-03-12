@@ -54,3 +54,16 @@ class StudentChangePassword extends StudentEvent {
   @override
   List<Object?> get props => [currentPassword, newPassword, confirmPassword];
 }
+
+/// Update GitHub username.
+class StudentUpdateGithubUsername extends StudentEvent {
+  final String studentId;
+  final String githubUsername;
+  const StudentUpdateGithubUsername({
+    required this.studentId,
+    required this.githubUsername,
+  });
+
+  @override
+  List<Object?> get props => [studentId, githubUsername];
+}

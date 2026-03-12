@@ -6,6 +6,8 @@ import 'package:edutool/features/admin/presentation/bloc/admin_event.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_state.dart';
 import 'package:edutool/shared/models/enrollment.dart';
 import 'package:edutool/shared/models/course.dart';
+import 'package:edutool/shared/models/student.dart';
+import 'package:edutool/shared/models/project.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Admin Enrollments Screen
@@ -20,13 +22,18 @@ class AdminEnrollmentsScreen extends StatefulWidget {
 
 class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
   List<Course>? _courses;
+  List<Student>? _students;
+  List<Project>? _courseProjects;
   int? _selectedCourseId;
   String? _loadError;
+  bool _isLoadingStudents = false;
+  bool _isLoadingProjects = false;
 
   @override
   void initState() {
     super.initState();
     _loadCourses();
+    _loadStudents();
   }
 
   Future<void> _loadCourses() async {
@@ -43,10 +50,51 @@ class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
     }
   }
 
+  Future<void> _loadStudents() async {
+    setState(() => _isLoadingStudents = true);
+    try {
+      // Fetch a large page of students to select from
+      final paginated = await context.read<AdminBloc>().repository.getStudents(
+        page: 0,
+        size: 100,
+      );
+      if (!mounted) return;
+      setState(() {
+        _students = paginated.content;
+        _isLoadingStudents = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoadingStudents = false);
+    }
+  }
+
   void _onCourseChanged(int? courseId) {
     if (courseId == null) return;
-    setState(() => _selectedCourseId = courseId);
+    setState(() {
+      _selectedCourseId = courseId;
+      _courseProjects = null;
+    });
     context.read<AdminBloc>().add(AdminLoadEnrollments(courseId: courseId));
+    _loadProjects(courseId);
+  }
+
+  Future<void> _loadProjects(int courseId) async {
+    setState(() => _isLoadingProjects = true);
+    try {
+      final paginated = await context.read<AdminBloc>().repository.getProjects(
+        courseId: courseId,
+        size: 100,
+      );
+      if (!mounted) return;
+      setState(() {
+        _courseProjects = paginated.content;
+        _isLoadingProjects = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoadingProjects = false);
+    }
   }
 
   void _showCreateEnrollmentBottomSheet() {
@@ -59,7 +107,7 @@ class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
       );
       return;
     }
-    final studentIdCtrl = TextEditingController();
+    int? tempStudentId;
     final formKey = GlobalKey<FormState>();
 
     showModalBottomSheet(
@@ -88,12 +136,33 @@ class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
                     style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: studentIdCtrl,
-                    decoration: const InputDecoration(labelText: 'ID Học viên (Student ID)'),
-                    keyboardType: TextInputType.number,
-                    validator: (v) => v == null || v.isEmpty ? 'Không được để trống' : null,
-                  ),
+                  if (_isLoadingStudents)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_students == null || _students!.isEmpty)
+                    const Text('Không có dữ liệu sinh viên', textAlign: TextAlign.center)
+                  else
+                    DropdownButtonFormField<int>(
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Chọn Sinh viên',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      items: _students!.map((s) {
+                        final id = int.tryParse(s.studentId) ?? 0;
+                        final name = s.user?.fullName ?? 'N/A';
+                        return DropdownMenuItem(
+                          value: id,
+                          child: Text(
+                            '${s.studentCode} - $name',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) => setModalState(() => tempStudentId = val),
+                      validator: (v) => v == null ? 'Vui lòng chọn sinh viên' : null,
+                    ),
                   const SizedBox(height: 24),
                   Row(
                     children: [
@@ -112,7 +181,7 @@ class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
                             Navigator.pop(ctx);
                             context.read<AdminBloc>().add(
                               AdminCreateEnrollment({
-                                'studentId': int.tryParse(studentIdCtrl.text.trim()),
+                                'studentId': tempStudentId,
                                 'courseId': _selectedCourseId,
                               }),
                             );
@@ -134,12 +203,14 @@ class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
   }
 
   void _showEditEnrollmentBottomSheet(BuildContext ctx, Enrollment e) {
-    final projectIdCtrl = TextEditingController(text: e.projectId ?? '');
-    final roleCtrl = TextEditingController(text: e.roleInProject);
+    int? tempProjectId = int.tryParse(e.projectId ?? '');
+    String tempRole = e.roleInProject;
     final groupCtrl = TextEditingController(
       text: e.groupNumber > 0 ? e.groupNumber.toString() : '',
     );
     final formKey = GlobalKey<FormState>();
+
+    const roles = ['LEADER', 'MEMBER'];
 
     showModalBottomSheet(
       context: ctx,
@@ -167,19 +238,41 @@ class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
                     style: Theme.of(dlgCtx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: projectIdCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'ID Đồ án (Project ID)',
+                  if (_isLoadingProjects)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_courseProjects == null || _courseProjects!.isEmpty)
+                    const Text('Không có project trong môn này', textAlign: TextAlign.center)
+                  else
+                    DropdownButtonFormField<int>(
+                      value: tempProjectId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Chọn Project',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.assignment),
+                      ),
+                      items: _courseProjects!.map((p) {
+                        return DropdownMenuItem(
+                          value: int.tryParse(p.projectId),
+                          child: Text(
+                            '${p.projectCode} - ${p.projectName}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) => setModalState(() => tempProjectId = val),
                     ),
-                    keyboardType: TextInputType.number,
-                  ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: roleCtrl,
+                  DropdownButtonFormField<String>(
+                    value: roles.contains(tempRole.toUpperCase()) ? tempRole.toUpperCase() : null,
                     decoration: const InputDecoration(
-                      labelText: 'Vai trò (VD: leader, member)',
+                      labelText: 'Vai trò',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.badge),
                     ),
+                    items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                    onChanged: (val) => setModalState(() => tempRole = val ?? ''),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -204,12 +297,8 @@ class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
                         child: FilledButton(
                           onPressed: () {
                             final body = <String, dynamic>{};
-                            if (projectIdCtrl.text.isNotEmpty) {
-                              body['projectId'] = int.tryParse(projectIdCtrl.text);
-                            }
-                            if (roleCtrl.text.isNotEmpty) {
-                              body['roleInProject'] = roleCtrl.text;
-                            }
+                            body['projectId'] = tempProjectId;
+                            body['roleInProject'] = tempRole;
                             if (groupCtrl.text.isNotEmpty) {
                               body['groupNumber'] = int.tryParse(groupCtrl.text);
                             }

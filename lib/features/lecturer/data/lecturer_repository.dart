@@ -210,6 +210,26 @@ class LecturerRepository {
     }
   }
 
+  /// GET /api/github/repositories/project/{projectId}/report/storage-url
+  /// Returns the URL of the report stored on Supabase
+  Future<String> getReportStorageUrl(int projectId) async {
+    try {
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.reportStorageUrl(projectId.toString()),
+      );
+      final base = BaseResponse<String>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json as String,
+      );
+      if (!base.isSuccess || base.data == null) {
+        throw ServerException(message: base.message, code: base.code);
+      }
+      return base.data!;
+    } on DioException catch (e) {
+      throw _mapDio(e, 'Không thể lấy link tải báo cáo');
+    }
+  }
+
   /// POST /api/projects
   Future<ProjectResponse> createProject({
     required String projectCode,

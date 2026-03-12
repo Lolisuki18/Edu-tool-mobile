@@ -20,6 +20,25 @@ class StudentBloc extends Bloc<StudentEvent, StudentState> {
     on<StudentLoadReports>(_onLoadReports);
     on<StudentSubmitRepo>(_onSubmitRepo);
     on<StudentChangePassword>(_onChangePassword);
+    on<StudentUpdateGithubUsername>(_onUpdateGithubUsername);
+  }
+
+  Future<void> _onUpdateGithubUsername(
+    StudentUpdateGithubUsername event,
+    Emitter<StudentState> emit,
+  ) async {
+    emit(const StudentLoading());
+    try {
+      await _repository.updateGithubUsername(
+        studentId: event.studentId,
+        githubUsername: event.githubUsername,
+      );
+      emit(const StudentActionSuccess(message: 'Cập nhật GitHub thành công'));
+    } on ServerException catch (e) {
+      emit(StudentFailure(message: e.message));
+    } catch (_) {
+      emit(const StudentFailure(message: 'Không thể cập nhật GitHub username'));
+    }
   }
 
   Future<void> _onLoadDashboard(

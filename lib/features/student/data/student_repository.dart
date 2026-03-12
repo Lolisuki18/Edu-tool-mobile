@@ -86,6 +86,28 @@ class StudentRepository {
     }
   }
 
+  /// PATCH /api/students/{studentId}
+  Future<void> updateGithubUsername({
+    required String studentId,
+    required String githubUsername,
+  }) async {
+    try {
+      final response = await _apiClient.dio.patch(
+        ApiEndpoints.studentById(studentId),
+        data: {'githubUsername': githubUsername},
+      );
+      final base = BaseResponse<dynamic>.fromJson(
+        response.data as Map<String, dynamic>,
+        null,
+      );
+      if (!base.isSuccess) {
+        throw ServerException(message: base.message, code: base.code);
+      }
+    } on DioException catch (e) {
+      throw _mapDio(e, 'Không thể cập nhật GitHub username');
+    }
+  }
+
   /// GET /api/github/repositories/course/{courseId}/groups
   Future<List<GroupDetailResponse>> getGroupsByCourse(int courseId) async {
     try {
