@@ -17,7 +17,7 @@ class AuthInterceptor extends Interceptor {
   ) async {
     // Skip auth endpoints – they don't need a Bearer token.
     final path = options.path;
-    if (path.startsWith('/auth/') || path.startsWith('/auth')) {
+    if (path.startsWith('/api/auth/') || path.startsWith('/api/auth')) {
       return handler.next(options);
     }
 

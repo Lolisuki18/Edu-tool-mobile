@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:edutool/core/constants/api_endpoints.dart';
 import 'package:edutool/core/errors/server_exception.dart';
 import 'package:edutool/core/network/api_client.dart';
 import 'package:edutool/core/network/base_response.dart';
@@ -19,7 +20,7 @@ class ReportRepositoryImpl implements ReportRepository {
   }) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/periodic-reports/courses/$courseId/submissions/active',
+        ApiEndpoints.periodicReportsByCourseActive(courseId.toString()),
         queryParameters: {'page': page, 'size': size},
       );
 
@@ -71,7 +72,7 @@ class ReportRepositoryImpl implements ReportRepository {
   }) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/periodic-reports',
+        ApiEndpoints.periodicReports,
         queryParameters: {'page': page, 'size': size},
       );
 

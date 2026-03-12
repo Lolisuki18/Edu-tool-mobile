@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:edutool/core/constants/api_endpoints.dart';
 import 'package:edutool/core/errors/server_exception.dart';
 import 'package:edutool/core/network/api_client.dart';
 import 'package:edutool/core/network/base_response.dart';
@@ -16,7 +17,7 @@ class StudentRepository {
   /// GET /api/users/me
   Future<User> getMe() async {
     try {
-      final response = await _apiClient.dio.get('/api/users/me');
+      final response = await _apiClient.dio.get(ApiEndpoints.me);
       final base = BaseResponse<Map<String, dynamic>>.fromJson(
         response.data as Map<String, dynamic>,
         (json) => json as Map<String, dynamic>,
@@ -34,7 +35,7 @@ class StudentRepository {
   Future<List<EnrollmentDetail>> getMyEnrollments(String studentId) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/enrollments',
+        ApiEndpoints.enrollments,
         queryParameters: {'studentId': studentId},
       );
       final base = BaseResponse<List<dynamic>>.fromJson(
@@ -55,7 +56,7 @@ class StudentRepository {
   /// GET /api/students?keyword={keyword} — to find the current student profile
   Future<Student?> getStudentByUserId(String userId) async {
     try {
-      final response = await _apiClient.dio.get('/api/students');
+      final response = await _apiClient.dio.get(ApiEndpoints.students);
       final base = BaseResponse<dynamic>.fromJson(
         response.data as Map<String, dynamic>,
         (json) => json,
@@ -89,7 +90,7 @@ class StudentRepository {
   Future<List<GroupDetailResponse>> getGroupsByCourse(int courseId) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/github/repositories/course/$courseId/groups',
+        ApiEndpoints.repositoriesByCourse(courseId.toString()),
       );
       final base = BaseResponse<List<dynamic>>.fromJson(
         response.data as Map<String, dynamic>,
@@ -110,7 +111,7 @@ class StudentRepository {
   Future<List<PeriodicReportResponse>> getActiveReports(int courseId) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/periodic-reports/courses/$courseId/submissions/active',
+        ApiEndpoints.periodicReportsByCourseActive(courseId.toString()),
       );
       final base = BaseResponse<Map<String, dynamic>>.fromJson(
         response.data as Map<String, dynamic>,
@@ -138,7 +139,7 @@ class StudentRepository {
   }) async {
     try {
       final response = await _apiClient.dio.post(
-        '/api/github/repositories',
+        ApiEndpoints.repositories,
         data: {
           'projectId': projectId,
           'repoUrl': repoUrl,
@@ -165,7 +166,7 @@ class StudentRepository {
   }) async {
     try {
       final response = await _apiClient.dio.put(
-        '/api/users/me/password',
+        ApiEndpoints.changePassword,
         data: {
           'currentPassword': currentPassword,
           'newPassword': newPassword,

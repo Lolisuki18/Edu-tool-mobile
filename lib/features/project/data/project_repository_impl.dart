@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:edutool/core/constants/api_endpoints.dart';
 import 'package:edutool/core/errors/server_exception.dart';
 import 'package:edutool/core/network/api_client.dart';
 import 'package:edutool/core/network/base_response.dart';
@@ -23,7 +24,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
   Future<List<ProjectResponse>> getProjectsByCourse(int courseId) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/projects',
+        ApiEndpoints.projects,
         queryParameters: {'courseId': courseId},
       );
 
@@ -54,7 +55,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
   Future<List<GroupDetailResponse>> getGroupsByCourse(int courseId) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/github/repositories/course/$courseId/groups',
+        ApiEndpoints.repositoriesByCourse(courseId.toString()),
       );
 
       final base = BaseResponse<List<dynamic>>.fromJson(
@@ -88,7 +89,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
   }) async {
     try {
       final response = await _apiClient.dio.post(
-        '/api/github/repositories',
+        ApiEndpoints.repositories,
         data: SubmitRepoRequest(
           projectId: projectId,
           repoUrl: repoUrl,
@@ -119,7 +120,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
   Future<List<GithubRepoResponse>> getReposByProject(int projectId) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/github/repositories',
+        ApiEndpoints.repositories,
         queryParameters: {'projectId': projectId},
       );
 
@@ -148,7 +149,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
   Future<GithubRepoResponse> selectRepo(int repoId) async {
     try {
       final response = await _apiClient.dio.patch(
-        '/api/github/repositories/$repoId/select',
+        ApiEndpoints.repositorySelect(repoId.toString()),
       );
 
       final base = BaseResponse<GithubRepoResponse>.fromJson(
@@ -184,7 +185,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       if (until != null) queryParams['until'] = until;
 
       final response = await _apiClient.dio.get(
-        '/api/github/repositories/project/$projectId/report/json',
+        ApiEndpoints.reportJson(projectId.toString()),
         queryParameters: queryParams,
       );
 
@@ -219,7 +220,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       if (until != null) queryParams['until'] = until;
 
       final response = await _apiClient.dio.get(
-        '/api/github/repositories/project/$projectId/report/csv',
+        ApiEndpoints.reportCsv(projectId.toString()),
         queryParameters: queryParams,
         options: Options(responseType: ResponseType.bytes),
       );
@@ -241,7 +242,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
   }) async {
     try {
       final response = await _apiClient.dio.post(
-        '/api/github/repositories/project/$projectId/report/storage-url',
+        ApiEndpoints.reportStorageUrl(projectId.toString()),
         data: SaveCommitReportUrlRequest(
           storageUrl: storageUrl,
           storageKey: storageKey,
@@ -274,7 +275,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
   Future<List<CommitReportUrlResponse>> getCommitReportHistory(int projectId) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/github/repositories/project/$projectId/report/storage-url',
+        ApiEndpoints.reportStorageUrl(projectId.toString()),
       );
 
       final base = BaseResponse<List<dynamic>>.fromJson(
@@ -302,7 +303,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
   Future<void> deleteCommitReportUrl(int projectId, int reportId) async {
     try {
       final response = await _apiClient.dio.delete(
-        '/api/github/repositories/project/$projectId/report/storage-url/$reportId',
+        ApiEndpoints.reportStorageUrlById(projectId.toString(), reportId.toString()),
       );
 
       final base = BaseResponse<dynamic>.fromJson(
