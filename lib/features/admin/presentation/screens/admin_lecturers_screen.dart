@@ -108,6 +108,82 @@ class _AdminLecturersScreenState extends State<AdminLecturersScreen> {
     );
   }
 
+  void _showLecturerDetailBottomSheet(dynamic l) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        final user = l.user;
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    child: Text(
+                      l.staffCode.isNotEmpty ? l.staffCode.substring(0, 2) : '?',
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user?.fullName ?? l.staffCode,
+                          style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          l.staffCode,
+                          style: const TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+              _DetailRow(icon: Icons.badge_outlined, label: 'Mã GV', value: l.staffCode),
+              if (user != null) ...[
+                const SizedBox(height: 12),
+                _DetailRow(icon: Icons.person_outline, label: 'Username', value: user.username),
+                const SizedBox(height: 12),
+                _DetailRow(icon: Icons.email_outlined, label: 'Email', value: user.email),
+                const SizedBox(height: 12),
+                _DetailRow(icon: Icons.security, label: 'Role', value: user.role),
+                const SizedBox(height: 12),
+                _DetailRow(
+                  icon: Icons.circle,
+                  label: 'Trạng thái',
+                  value: user.status,
+                  valueColor: user.status == 'ACTIVE' ? AppColors.success : AppColors.error,
+                  iconColor: user.status == 'ACTIVE' ? AppColors.success : AppColors.error,
+                ),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Đóng'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _confirmDeleteLecturer(dynamic l) async {
     final name = l.user?.fullName ?? l.staffCode;
     final confirmed = await showDialog<bool>(
@@ -212,6 +288,7 @@ class _AdminLecturersScreenState extends State<AdminLecturersScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              onTap: () => _showLecturerDetailBottomSheet(l),
                               leading: CircleAvatar(
                               child: Text(
                                 l.staffCode.isNotEmpty
@@ -254,3 +331,45 @@ class _AdminLecturersScreenState extends State<AdminLecturersScreen> {
   }
 }
 
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+  final Color? iconColor;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: iconColor ?? AppColors.textSecondary),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: valueColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

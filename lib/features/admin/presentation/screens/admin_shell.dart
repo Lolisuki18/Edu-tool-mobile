@@ -50,7 +50,23 @@ class AdminShell extends StatelessWidget {
       label: 'Projects',
       route: '/admin/projects',
     ),
+    _DrawerItem(
+      icon: Icons.insert_chart,
+      label: 'Reports',
+      route: '/admin/reports',
+    ),
+    _DrawerItem(
+      icon: Icons.source,
+      label: 'Repositories',
+      route: '/admin/repositories',
+    ),
+    _DrawerItem(
+      icon: Icons.history,
+      label: 'Exported Reports',
+      route: '/admin/exported-reports',
+    ),
   ];
+
 
   @override
   Widget build(BuildContext context) {

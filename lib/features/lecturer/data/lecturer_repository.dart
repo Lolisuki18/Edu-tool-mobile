@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:edutool/core/constants/api_endpoints.dart';
 import 'package:edutool/core/errors/server_exception.dart';
 import 'package:edutool/core/network/api_client.dart';
 import 'package:edutool/core/network/base_response.dart';
@@ -18,7 +19,7 @@ class LecturerRepository {
   /// GET /api/users/me
   Future<User> getMe() async {
     try {
-      final response = await _apiClient.dio.get('/api/users/me');
+      final response = await _apiClient.dio.get(ApiEndpoints.me);
       final base = BaseResponse<Map<String, dynamic>>.fromJson(
         response.data as Map<String, dynamic>,
         (json) => json as Map<String, dynamic>,
@@ -35,7 +36,7 @@ class LecturerRepository {
   /// GET /courses — get all courses (lecturer will filter their own)
   Future<List<Course>> getCourses() async {
     try {
-      final response = await _apiClient.dio.get('/courses');
+      final response = await _apiClient.dio.get(ApiEndpoints.courses);
       final base = BaseResponse<List<dynamic>>.fromJson(
         response.data as Map<String, dynamic>,
         (json) => json as List<dynamic>,
@@ -55,7 +56,7 @@ class LecturerRepository {
   Future<List<ProjectResponse>> getProjectsByCourse(int courseId) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/projects',
+        ApiEndpoints.projects,
         queryParameters: {'courseId': courseId},
       );
       final base = BaseResponse<List<dynamic>>.fromJson(
@@ -77,7 +78,7 @@ class LecturerRepository {
   Future<List<GroupDetailResponse>> getGroupsByCourse(int courseId) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/github/repositories/course/$courseId/groups',
+        ApiEndpoints.repositoriesByCourse(courseId.toString()),
       );
       final base = BaseResponse<List<dynamic>>.fromJson(
         response.data as Map<String, dynamic>,
@@ -98,7 +99,7 @@ class LecturerRepository {
   Future<List<GithubRepoResponse>> getReposByCourse(int courseId) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/github/repositories',
+        ApiEndpoints.repositories,
         queryParameters: {'courseId': courseId},
       );
       final base = BaseResponse<List<dynamic>>.fromJson(
@@ -124,7 +125,7 @@ class LecturerRepository {
   }) async {
     try {
       final response = await _apiClient.dio.post(
-        '/api/github/repositories',
+        ApiEndpoints.repositories,
         data: {
           'projectId': projectId,
           'repoUrl': repoUrl,
@@ -148,7 +149,7 @@ class LecturerRepository {
   Future<GithubRepoResponse> selectRepo(int repoId) async {
     try {
       final response = await _apiClient.dio.patch(
-        '/api/github/repositories/$repoId/select',
+        ApiEndpoints.repositorySelect(repoId.toString()),
       );
       final base = BaseResponse<GithubRepoResponse>.fromJson(
         response.data as Map<String, dynamic>,
@@ -167,7 +168,7 @@ class LecturerRepository {
   Future<void> deleteRepo(int repoId) async {
     try {
       final response = await _apiClient.dio.delete(
-        '/api/github/repositories/$repoId',
+        ApiEndpoints.repositoryById(repoId.toString()),
       );
       final base = BaseResponse<dynamic>.fromJson(
         response.data as Map<String, dynamic>,
@@ -193,7 +194,7 @@ class LecturerRepository {
       if (until != null) qp['until'] = until;
 
       final response = await _apiClient.dio.get(
-        '/api/github/repositories/project/$projectId/report/json',
+        ApiEndpoints.reportJson(projectId.toString()),
         queryParameters: qp,
       );
       final base = BaseResponse<Map<String, dynamic>>.fromJson(
@@ -219,7 +220,7 @@ class LecturerRepository {
   }) async {
     try {
       final response = await _apiClient.dio.post(
-        '/api/projects',
+        ApiEndpoints.projects,
         data: {
           'projectCode': projectCode,
           'projectName': projectName,
@@ -247,7 +248,7 @@ class LecturerRepository {
   ) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/enrollments',
+        ApiEndpoints.enrollments,
         queryParameters: {'courseId': courseId},
       );
       final base = BaseResponse<List<dynamic>>.fromJson(
@@ -271,7 +272,7 @@ class LecturerRepository {
   }) async {
     try {
       final response = await _apiClient.dio.put(
-        '/api/users/me/password',
+        ApiEndpoints.changePassword,
         data: {
           'currentPassword': currentPassword,
           'newPassword': newPassword,
@@ -300,7 +301,7 @@ class LecturerRepository {
   ) async {
     try {
       final response = await _apiClient.dio.get(
-        '/api/periodic-reports/courses/$courseId',
+        ApiEndpoints.periodicReportsByCourse(courseId.toString()),
       );
       final base = BaseResponse<Map<String, dynamic>>.fromJson(
         response.data as Map<String, dynamic>,
@@ -331,7 +332,7 @@ class LecturerRepository {
   }) async {
     try {
       final response = await _apiClient.dio.post(
-        '/api/periodic-reports',
+        ApiEndpoints.periodicReports,
         data: {
           'courseId': courseId,
           'reportFromDate': reportFromDate,
@@ -358,7 +359,7 @@ class LecturerRepository {
   Future<void> deletePeriodicReport(int reportId) async {
     try {
       final response = await _apiClient.dio.delete(
-        '/api/periodic-reports/$reportId',
+        ApiEndpoints.periodicReportById(reportId.toString()),
       );
       final base = BaseResponse<dynamic>.fromJson(
         response.data as Map<String, dynamic>,

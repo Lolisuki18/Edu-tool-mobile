@@ -13,6 +13,7 @@ class ReportBloc extends Bloc<ReportEvent, ReportState> {
     : _repository = repository,
       super(const ReportInitial()) {
     on<ReportLoadActive>(_onLoadActive);
+    on<ReportLoadAll>(_onLoadAll);
   }
 
   Future<void> _onLoadActive(
@@ -29,6 +30,24 @@ class ReportBloc extends Bloc<ReportEvent, ReportState> {
       emit(ReportFailure(message: e.message));
     } catch (_) {
       emit(const ReportFailure(message: 'Đã xảy ra lỗi khi tải báo cáo'));
+    }
+  }
+
+  Future<void> _onLoadAll(
+    ReportLoadAll event,
+    Emitter<ReportState> emit,
+  ) async {
+    emit(const ReportLoading());
+    try {
+      final reports = await _repository.getAllReports(
+        page: event.page,
+        size: event.size,
+      );
+      emit(ReportLoaded(reports: reports));
+    } on ServerException catch (e) {
+      emit(ReportFailure(message: e.message));
+    } catch (_) {
+      emit(const ReportFailure(message: 'Đã xảy ra lỗi khi tải danh sách báo cáo'));
     }
   }
 }

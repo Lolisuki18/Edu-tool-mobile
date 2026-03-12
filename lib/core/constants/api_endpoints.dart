@@ -1,10 +1,11 @@
 /// Centralised API endpoint constants.
 abstract final class ApiEndpoints {
   // ── Auth ──────────────────────────────────────────────
-  static const String login = '/auth/login';
-  static const String register = '/auth/register';
-  static const String logout = '/auth/logout';
-  static const String refresh = '/auth/refresh';
+  static const String login = '/api/auth/login';
+  static const String register = '/api/auth/register';
+  static const String logout = '/api/auth/logout';
+  static const String refresh = '/api/auth/refresh';
+  static const String verify = '/api/auth/verify';
   static const String me = '/api/users/me';
 
   // ── Users ─────────────────────────────────────────────
@@ -22,12 +23,13 @@ abstract final class ApiEndpoints {
   static String lecturerById(String id) => '/api/lecturers/$id';
 
   // ── Semesters ─────────────────────────────────────────
-  static const String semesters = '/semesters';
-  static String semesterById(String id) => '/semesters/$id';
+  static const String semesters = '/api/semesters';
+  static String semesterById(String id) => '/api/semesters/$id';
 
   // ── Courses ───────────────────────────────────────────
-  static const String courses = '/courses';
-  static String courseById(String id) => '/courses/$id';
+  static const String courses = '/api/courses';
+  static String courseById(String id) => '/api/courses/$id';
+  static String courseByCode(String code) => '/api/courses/code/$code';
 
   // ── Enrollments ───────────────────────────────────────
   static const String enrollments = '/api/enrollments';
@@ -55,4 +57,15 @@ abstract final class ApiEndpoints {
       '/api/github/repositories/project/$projectId/report/storage-url';
   static String reportStorageUrlById(String projectId, String reportId) =>
       '/api/github/repositories/project/$projectId/report/storage-url/$reportId';
+
+  // ── Periodic Reports ──────────────────────────────────
+  static const String periodicReports = '/api/periodic-reports';
+  static String periodicReportsByCourse(String courseId) =>
+      '/api/periodic-reports/courses/$courseId';
+  static String periodicReportsByCourseActive(String courseId) =>
+      '/api/periodic-reports/courses/$courseId/submissions/active';
+  static String periodicReportById(String id) => '/api/periodic-reports/$id';
+
+  // ── Admin/User Actions ────────────────────────────────
+  static const String changePassword = '/api/users/me/password';
 }

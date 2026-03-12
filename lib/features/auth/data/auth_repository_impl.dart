@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:edutool/core/constants/api_endpoints.dart';
 import 'package:edutool/core/errors/server_exception.dart';
 import 'package:edutool/core/network/api_client.dart';
 import 'package:edutool/core/network/base_response.dart';
@@ -20,7 +21,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     try {
       final response = await _apiClient.dio.post(
-        '/auth/login',
+        ApiEndpoints.login,
         data: LoginRequest(username: username, password: password).toJson(),
       );
 
@@ -65,7 +66,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> logout() async {
     try {
-      await _apiClient.dio.post('/auth/logout');
+      await _apiClient.dio.post(ApiEndpoints.logout);
     } finally {
       await _apiClient.authInterceptor.clearAccessToken();
     }
@@ -80,7 +81,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     try {
       final response = await _apiClient.dio.post(
-        '/auth/register',
+        ApiEndpoints.register,
         data: {
           'fullName': fullName,
           'email': email,

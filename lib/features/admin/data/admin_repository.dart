@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:edutool/core/constants/api_endpoints.dart';
 import 'package:edutool/core/errors/server_exception.dart';
 import 'package:edutool/core/network/api_client.dart';
 import 'package:edutool/core/network/base_response.dart';
@@ -16,7 +17,7 @@ class AdminRepository {
   // ═══════════════════════════════════════════════════════════════════
 
   Future<User> getMe() async {
-    final data = await _getOne('/api/users/me');
+    final data = await _getOne(ApiEndpoints.me);
     return User.fromJson(data);
   }
 
@@ -26,7 +27,7 @@ class AdminRepository {
     String? search,
   }) async {
     return _getPaginated(
-      '/api/users',
+      ApiEndpoints.users,
       page: page,
       size: size,
       search: search,
@@ -35,21 +36,21 @@ class AdminRepository {
   }
 
   Future<User> getUserById(String id) async {
-    final data = await _getOne('/api/users/$id');
+    final data = await _getOne(ApiEndpoints.userById(id));
     return User.fromJson(data);
   }
 
   Future<User> createUser(Map<String, dynamic> body) async {
-    final data = await _post('/api/users', body);
+    final data = await _post(ApiEndpoints.users, body);
     return User.fromJson(data);
   }
 
   Future<User> updateUser(String id, Map<String, dynamic> body) async {
-    final data = await _put('/api/users/$id', body);
+    final data = await _put(ApiEndpoints.userById(id), body);
     return User.fromJson(data);
   }
 
-  Future<void> deleteUser(String id) async => _delete('/api/users/$id');
+  Future<void> deleteUser(String id) async => _delete(ApiEndpoints.userById(id));
 
   // ═══════════════════════════════════════════════════════════════════
   // Students
@@ -61,7 +62,7 @@ class AdminRepository {
     String? search,
   }) async {
     return _getPaginated(
-      '/api/students',
+      ApiEndpoints.students,
       page: page,
       size: size,
       search: search,
@@ -70,21 +71,22 @@ class AdminRepository {
   }
 
   Future<Student> getStudentById(String id) async {
-    final data = await _getOne('/api/students/$id');
+    final data = await _getOne(ApiEndpoints.studentById(id));
     return Student.fromJson(data);
   }
 
   Future<Student> createStudent(Map<String, dynamic> body) async {
-    final data = await _post('/api/students', body);
+    final data = await _post(ApiEndpoints.students, body);
     return Student.fromJson(data);
   }
 
   Future<Student> updateStudent(String id, Map<String, dynamic> body) async {
-    final data = await _put('/api/students/$id', body);
+    final data = await _put(ApiEndpoints.studentById(id), body);
     return Student.fromJson(data);
   }
 
-  Future<void> deleteStudent(String id) async => _delete('/api/students/$id');
+  Future<void> deleteStudent(String id) async =>
+      _delete(ApiEndpoints.studentById(id));
 
   // ═══════════════════════════════════════════════════════════════════
   // Lecturers
@@ -96,7 +98,7 @@ class AdminRepository {
     String? search,
   }) async {
     return _getPaginated(
-      '/api/lecturers',
+      ApiEndpoints.lecturers,
       page: page,
       size: size,
       search: search,
@@ -105,58 +107,61 @@ class AdminRepository {
   }
 
   Future<Lecturer> createLecturer(Map<String, dynamic> body) async {
-    final data = await _post('/api/lecturers', body);
+    final data = await _post(ApiEndpoints.lecturers, body);
     return Lecturer.fromJson(data);
   }
 
   Future<Lecturer> updateLecturer(String id, Map<String, dynamic> body) async {
-    final data = await _put('/api/lecturers/$id', body);
+    final data = await _put(ApiEndpoints.lecturerById(id), body);
     return Lecturer.fromJson(data);
   }
 
-  Future<void> deleteLecturer(String id) async => _delete('/api/lecturers/$id');
+  Future<void> deleteLecturer(String id) async =>
+      _delete(ApiEndpoints.lecturerById(id));
 
   // ═══════════════════════════════════════════════════════════════════
   // Semesters
   // ═══════════════════════════════════════════════════════════════════
 
   Future<List<Semester>> getSemesters() async {
-    final list = await _getList('/semesters');
+    final list = await _getList(ApiEndpoints.semesters);
     return list.map((e) => Semester.fromJson(e)).toList();
   }
 
   Future<Semester> createSemester(Map<String, dynamic> body) async {
-    final data = await _post('/semesters', body);
+    final data = await _post(ApiEndpoints.semesters, body);
     return Semester.fromJson(data);
   }
 
   Future<Semester> updateSemester(String id, Map<String, dynamic> body) async {
-    final data = await _put('/semesters/$id', body);
+    final data = await _put(ApiEndpoints.semesterById(id), body);
     return Semester.fromJson(data);
   }
 
-  Future<void> deleteSemester(String id) async => _delete('/semesters/$id');
+  Future<void> deleteSemester(String id) async =>
+      _delete(ApiEndpoints.semesterById(id));
 
   // ═══════════════════════════════════════════════════════════════════
   // Courses
   // ═══════════════════════════════════════════════════════════════════
 
   Future<List<Course>> getCourses() async {
-    final list = await _getList('/courses');
+    final list = await _getList(ApiEndpoints.courses);
     return list.map((e) => Course.fromJson(e)).toList();
   }
 
   Future<Course> createCourse(Map<String, dynamic> body) async {
-    final data = await _post('/courses', body);
+    final data = await _post(ApiEndpoints.courses, body);
     return Course.fromJson(data);
   }
 
   Future<Course> updateCourse(String id, Map<String, dynamic> body) async {
-    final data = await _put('/courses/$id', body);
+    final data = await _put(ApiEndpoints.courseById(id), body);
     return Course.fromJson(data);
   }
 
-  Future<void> deleteCourse(String id) async => _delete('/courses/$id');
+  Future<void> deleteCourse(String id) async =>
+      _delete(ApiEndpoints.courseById(id));
 
   // ═══════════════════════════════════════════════════════════════════
   // Enrollments
@@ -164,14 +169,14 @@ class AdminRepository {
 
   Future<List<Enrollment>> getEnrollments({required int courseId}) async {
     final list = await _getList(
-      '/api/enrollments',
+      ApiEndpoints.enrollments,
       queryParameters: {'courseId': courseId},
     );
     return list.map((e) => Enrollment.fromJson(e)).toList();
   }
 
   Future<Enrollment> createEnrollment(Map<String, dynamic> body) async {
-    final data = await _post('/api/enrollments', body);
+    final data = await _post(ApiEndpoints.enrollments, body);
     return Enrollment.fromJson(data);
   }
 
@@ -179,12 +184,12 @@ class AdminRepository {
     String id,
     Map<String, dynamic> body,
   ) async {
-    final data = await _put('/api/enrollments/$id', body);
+    final data = await _put(ApiEndpoints.enrollmentById(id), body);
     return Enrollment.fromJson(data);
   }
 
   Future<void> deleteEnrollment(String id) async =>
-      _delete('/api/enrollments/$id');
+      _delete(ApiEndpoints.enrollmentById(id));
 
   // ═══════════════════════════════════════════════════════════════════
   // Projects
@@ -198,7 +203,7 @@ class AdminRepository {
     final qp = <String, dynamic>{'page': page, 'size': size};
     if (courseId != null) qp['courseId'] = courseId;
     return _getPaginated(
-      '/api/projects',
+      ApiEndpoints.projects,
       page: page,
       size: size,
       extra: qp,
@@ -207,16 +212,17 @@ class AdminRepository {
   }
 
   Future<Project> createProject(Map<String, dynamic> body) async {
-    final data = await _post('/api/projects', body);
+    final data = await _post(ApiEndpoints.projects, body);
     return Project.fromJson(data);
   }
 
   Future<Project> updateProject(String id, Map<String, dynamic> body) async {
-    final data = await _put('/api/projects/$id', body);
+    final data = await _put(ApiEndpoints.projectById(id), body);
     return Project.fromJson(data);
   }
 
-  Future<void> deleteProject(String id) async => _delete('/api/projects/$id');
+  Future<void> deleteProject(String id) async =>
+      _delete(ApiEndpoints.projectById(id));
 
   // ═══════════════════════════════════════════════════════════════════
   // Change password
@@ -252,15 +258,14 @@ class AdminRepository {
   // Dashboard summary
   // ═══════════════════════════════════════════════════════════════════
 
-  /// Returns quick counts for admin dashboard: {users, students, lecturers, courses, semesters, projects}
   Future<Map<String, int>> getDashboardCounts() async {
     final results = await Future.wait([
-      _getCountOrList('/api/users', paginated: true),
-      _getCountOrList('/api/students', paginated: true),
-      _getCountOrList('/api/lecturers', paginated: true),
-      _getCountOrList('/courses', paginated: false),
-      _getCountOrList('/semesters', paginated: false),
-      _getCountOrList('/api/projects', paginated: true),
+      _getCountOrList(ApiEndpoints.users, paginated: true),
+      _getCountOrList(ApiEndpoints.students, paginated: true),
+      _getCountOrList(ApiEndpoints.lecturers, paginated: true),
+      _getCountOrList(ApiEndpoints.courses, paginated: false),
+      _getCountOrList(ApiEndpoints.semesters, paginated: false),
+      _getCountOrList(ApiEndpoints.projects, paginated: true),
     ]);
     return {
       'users': results[0],
