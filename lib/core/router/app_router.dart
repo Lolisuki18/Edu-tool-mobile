@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:edutool/core/network/api_client.dart';
 import 'package:edutool/core/network/session_manager.dart';
@@ -18,6 +19,7 @@ import 'package:edutool/features/lecturer/presentation/screens/lecturer_shell.da
 import 'package:edutool/features/admin/data/admin_repository.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_bloc.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_event.dart';
+import 'package:edutool/features/admin/presentation/bloc/admin_repo_bloc.dart';
 import 'package:edutool/features/admin/presentation/screens/admin_shell.dart';
 import 'package:edutool/features/admin/presentation/screens/admin_dashboard_screen.dart';
 import 'package:edutool/features/admin/presentation/screens/admin_users_screen.dart';
@@ -28,12 +30,16 @@ import 'package:edutool/features/admin/presentation/screens/admin_courses_screen
 import 'package:edutool/features/admin/presentation/screens/admin_enrollments_screen.dart';
 import 'package:edutool/features/admin/presentation/screens/admin_projects_screen.dart';
 import 'package:edutool/features/admin/presentation/screens/admin_profile_screen.dart';
+import 'package:edutool/features/admin/presentation/screens/admin_repositories_screen.dart';
+import 'package:edutool/features/admin/presentation/screens/admin_exported_reports_screen.dart';
 import 'package:edutool/features/project/data/project_repository_impl.dart';
 import 'package:edutool/features/project/presentation/bloc/project_bloc.dart';
 import 'package:edutool/features/project/presentation/screens/project_detail_screen.dart';
 import 'package:edutool/features/report/data/report_repository_impl.dart';
 import 'package:edutool/features/report/presentation/bloc/report_bloc.dart';
 import 'package:edutool/features/report/presentation/screens/report_list_screen.dart';
+import 'package:edutool/features/admin/presentation/screens/admin_reports_screen.dart';
+
 
 /// Builds the application-level [GoRouter].
 GoRouter buildRouter(ApiClient apiClient) {
@@ -214,6 +220,66 @@ GoRouter buildRouter(ApiClient apiClient) {
             title: 'Projects',
             selectedIndex: 7,
             child: AdminProjectsScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/reports',
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => AdminBloc(repository: AdminRepository(apiClient: apiClient)),
+            ),
+            BlocProvider(
+              create: (_) => ReportBloc(repository: ReportRepositoryImpl(apiClient: apiClient)),
+            ),
+          ],
+          child: const AdminShell(
+            title: 'Reports',
+            selectedIndex: 8,
+            child: AdminReportsScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/repositories',
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => AdminBloc(repository: AdminRepository(apiClient: apiClient)),
+            ),
+            BlocProvider(
+              create: (_) => AdminRepoBloc(
+                repository: ProjectRepositoryImpl(apiClient: apiClient),
+                supabase: Supabase.instance.client,
+              ),
+            ),
+          ],
+          child: const AdminShell(
+            title: 'Repositories',
+            selectedIndex: 9,
+            child: AdminRepositoriesScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/exported-reports',
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => AdminBloc(repository: AdminRepository(apiClient: apiClient)),
+            ),
+            BlocProvider(
+              create: (_) => AdminRepoBloc(
+                repository: ProjectRepositoryImpl(apiClient: apiClient),
+                supabase: Supabase.instance.client,
+              ),
+            ),
+          ],
+          child: const AdminShell(
+            title: 'Exported Reports',
+            selectedIndex: 10,
+            child: AdminExportedReportsScreen(),
           ),
         ),
       ),

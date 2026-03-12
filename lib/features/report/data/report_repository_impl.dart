@@ -63,4 +63,55 @@ class ReportRepositoryImpl implements ReportRepository {
       );
     }
   }
+
+  @override
+  Future<List<PeriodicReportResponse>> getAllReports({
+    int page = 0,
+    int size = 20,
+  }) async {
+    try {
+      final response = await _apiClient.dio.get(
+        '/api/periodic-reports',
+        queryParameters: {'page': page, 'size': size},
+      );
+
+      final base = BaseResponse<Map<String, dynamic>>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json as Map<String, dynamic>,
+      );
+
+      if (!base.isSuccess || base.data == null) {
+        throw ServerException(
+          message: base.message,
+          code: base.code,
+          errors: base.errors,
+        );
+      }
+
+      final content = base.data!['content'] as List<dynamic>? ?? [];
+      return content
+          .map(
+            (e) => PeriodicReportResponse.fromJson(e as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      if (data is Map<String, dynamic>) {
+        throw ServerException(
+          message:
+              data['message'] as String? ?? 'Không thể tải danh sách báo cáo',
+          code: e.response?.statusCode ?? 0,
+          errors:
+              (data['errors'] as List<dynamic>?)
+                  ?.map((e) => e.toString())
+                  .toList() ??
+              const [],
+        );
+      }
+      throw ServerException(
+        message: e.message ?? 'Không thể tải danh sách báo cáo',
+        code: e.response?.statusCode ?? 0,
+      );
+    }
+  }
 }

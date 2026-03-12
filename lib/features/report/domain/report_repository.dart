@@ -10,4 +10,11 @@ abstract class ReportRepository {
     int page = 0,
     int size = 20,
   });
+  /// Fetches all periodic reports across the system (Admin only).
+  ///
+  /// Calls `GET /api/periodic-reports`.
+  Future<List<PeriodicReportResponse>> getAllReports({
+    int page = 0,
+    int size = 20,
+  });
 }

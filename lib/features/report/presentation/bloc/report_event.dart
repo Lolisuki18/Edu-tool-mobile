@@ -16,3 +16,14 @@ class ReportLoadActive extends ReportEvent {
   @override
   List<Object?> get props => [courseId];
 }
+
+/// Load all periodic reports (Admin).
+class ReportLoadAll extends ReportEvent {
+  final int page;
+  final int size;
+
+  const ReportLoadAll({required this.page, this.size = 20});
+
+  @override
+  List<Object?> get props => [page, size];
+}
