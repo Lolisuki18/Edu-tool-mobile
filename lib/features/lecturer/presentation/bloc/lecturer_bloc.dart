@@ -29,6 +29,8 @@ class LecturerBloc extends Bloc<LecturerEvent, LecturerState> {
     on<LecturerLoadPeriodicReports>(_onLoadPeriodicReports);
     on<LecturerCreatePeriodicReport>(_onCreatePeriodicReport);
     on<LecturerDeletePeriodicReport>(_onDeletePeriodicReport);
+    on<LecturerAssignStudentToGroup>(_onAssignStudentToGroup);
+    on<LecturerUpdateProfile>(_onUpdateProfile);
   }
 
   Future<void> _onLoadDashboard(
@@ -255,6 +257,50 @@ class LecturerBloc extends Bloc<LecturerEvent, LecturerState> {
       emit(LecturerFailure(message: e.message));
     } catch (_) {
       emit(const LecturerFailure(message: 'Không thể xóa báo cáo'));
+    }
+  }
+
+  Future<void> _onAssignStudentToGroup(
+    LecturerAssignStudentToGroup event,
+    Emitter<LecturerState> emit,
+  ) async {
+    emit(const LecturerLoading());
+    try {
+      await _repository.assignStudentToGroup(
+        enrollmentId: event.enrollmentId,
+        projectId: event.projectId,
+        groupNumber: event.groupNumber,
+        role: event.role,
+      );
+      emit(const LecturerActionSuccess(message: 'Gán sinh viên thành công'));
+      if (_activeCourseId != null) {
+        add(LecturerLoadGroups(courseId: _activeCourseId!));
+      }
+    } on ServerException catch (e) {
+      emit(LecturerFailure(message: e.message));
+    } catch (_) {
+      emit(const LecturerFailure(message: 'Không thể gán sinh viên vào nhóm'));
+    }
+  }
+
+  Future<void> _onUpdateProfile(
+    LecturerUpdateProfile event,
+    Emitter<LecturerState> emit,
+  ) async {
+    final s = state;
+    if (s is! LecturerDashboardLoaded) return;
+    emit(const LecturerLoading());
+    try {
+      final updated = await _repository.updateMe(
+        s.user.userId,
+        {'fullName': event.fullName},
+      );
+      emit(const LecturerActionSuccess(message: 'Cập nhật thông tin thành công'));
+      emit(LecturerDashboardLoaded(user: updated, courses: s.courses));
+    } on ServerException catch (e) {
+      emit(LecturerFailure(message: e.message));
+    } catch (_) {
+      emit(const LecturerFailure(message: 'Không thể cập nhật thông tin'));
     }
   }
 }

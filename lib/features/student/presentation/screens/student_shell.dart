@@ -11,6 +11,7 @@ import 'package:edutool/features/student/presentation/bloc/student_state.dart';
 import 'package:edutool/shared/services/notification_service.dart';
 import 'package:edutool/shared/widgets/notification_widgets.dart';
 import 'package:edutool/features/project/data/models/group_detail_response.dart';
+import 'package:edutool/shared/widgets/skeleton_loading.dart';
 
 /// Student bottom-nav shell with 4 tabs: Home, Groups, Reports, Profile.
 class StudentShell extends StatefulWidget {
@@ -48,11 +49,11 @@ class _StudentShellState extends State<StudentShell> {
         ),
         body: IndexedStack(
           index: _currentIndex,
-          children: const [
-            _HomeTab(),
-            _CoursesTab(),
-            _GroupTab(),
-            _ProfileTab(),
+          children: [
+            _HomeTab(onTabChange: (i) => setState(() => _currentIndex = i)),
+            const _CoursesTab(),
+            const _GroupTab(),
+            const _ProfileTab(),
           ],
         ),
         bottomNavigationBar: NavigationBar(
@@ -91,7 +92,8 @@ class _StudentShellState extends State<StudentShell> {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _HomeTab extends StatelessWidget {
-  const _HomeTab();
+  final ValueChanged<int> onTabChange;
+  const _HomeTab({required this.onTabChange});
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +106,7 @@ class _HomeTab extends StatelessWidget {
           c is StudentFailure,
       builder: (context, state) {
         if (state is StudentLoading || state is StudentInitial) {
-          return const Center(child: CircularProgressIndicator());
+          return const DashboardSkeleton();
         }
 
         if (state is StudentFailure) {
@@ -151,13 +153,18 @@ class _HomeTab extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 children: [
                   Text(
-                    'Xin chào, ${u.fullName} 👋',
-                    style: theme.textTheme.headlineSmall,
+                    _getGreeting(u.fullName),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Hôm nay bạn có gì cần làm?',
-                    style: theme.textTheme.bodyMedium,
+                    'Hôm nay bạn muốn kiểm tra gì?',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -170,6 +177,7 @@ class _HomeTab extends StatelessWidget {
                           value: '${enrollments.length}',
                           icon: Icons.menu_book_outlined,
                           color: AppColors.primary,
+                          onTap: () => onTabChange(1),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -179,9 +187,46 @@ class _HomeTab extends StatelessWidget {
                           value: '${assignedEnrollments.length}',
                           icon: Icons.code_outlined,
                           color: AppColors.success,
+                          onTap: () => onTabChange(2),
                         ),
                       ),
                     ],
+                  ),
+                  // Quick Actions
+                  Text(
+                    'Truy cập nhanh',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 100,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _QuickActionItem(
+                          icon: Icons.qr_code_scanner,
+                          label: 'Quét mã',
+                          onTap: () {}, // TODO: Implement QR
+                        ),
+                        _QuickActionItem(
+                          icon: Icons.calendar_month_outlined,
+                          label: 'Lịch học',
+                          onTap: () {}, 
+                        ),
+                        _QuickActionItem(
+                          icon: Icons.notifications_none_outlined,
+                          label: 'Thông báo',
+                          onTap: () {}, // Handled by shell
+                        ),
+                        _QuickActionItem(
+                          icon: Icons.help_outline,
+                          label: 'Hỗ trợ',
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -212,9 +257,16 @@ class _HomeTab extends StatelessWidget {
           );
         }
 
-        return const SizedBox.shrink();
+        return const DashboardSkeleton();
       },
     );
+  }
+
+  String _getGreeting(String name) {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Chào buổi sáng, $name ☀️';
+    if (hour < 18) return 'Chào buổi chiều, $name 🌤️';
+    return 'Chào buổi tối, $name 🌙';
   }
 }
 
@@ -700,31 +752,98 @@ class _StatCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
+
   const _StatCard({
     required this.label,
     required this.value,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      letterSpacing: 0.5,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickActionItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 85,
+      margin: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 24),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 28),
+            ),
             const SizedBox(height: 8),
             Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
-            const SizedBox(height: 2),
-            Text(label, style: Theme.of(context).textTheme.labelSmall),
           ],
         ),
       ),
@@ -740,26 +859,42 @@ class _CourseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = enrollment;
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-          child: Text(
-            e.courseCode.length >= 3
-                ? e.courseCode.substring(0, 3)
-                : e.courseCode,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
+      margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.divider.withValues(alpha: 0.5)),
+      ),
+      child: InkWell(
+        onTap: () => context.push('/student/reports/${e.courseId}'),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              child: Text(
+                e.courseCode.length >= 3
+                    ? e.courseCode.substring(0, 3)
+                    : e.courseCode,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
+            title: Text(
+              e.courseCode,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              e.courseName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textHint),
           ),
         ),
-        title: Text(
-          e.courseCode,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(e.courseName),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textHint),
       ),
     );
   }

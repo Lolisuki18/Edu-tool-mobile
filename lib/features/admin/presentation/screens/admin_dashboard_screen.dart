@@ -6,10 +6,18 @@ import 'package:edutool/core/theme/app_colors.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_bloc.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_event.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_state.dart';
+import 'package:edutool/shared/widgets/skeleton_loading.dart';
 
 /// Admin dashboard content — shows counts for each entity.
 class AdminDashboardContent extends StatelessWidget {
   const AdminDashboardContent({super.key});
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Chào buổi sáng ☀️';
+    if (hour < 18) return 'Chào buổi chiều 🌤️';
+    return 'Chào buổi tối 🌙';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +26,7 @@ class AdminDashboardContent extends StatelessWidget {
           c is AdminDashboardLoaded || c is AdminLoading || c is AdminFailure,
       builder: (context, state) {
         if (state is AdminLoading || state is AdminInitial) {
-          return const Center(child: CircularProgressIndicator());
+          return const AdminDashboardSkeleton();
         }
         if (state is AdminFailure) {
           return Center(
@@ -59,15 +67,20 @@ class AdminDashboardContent extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             children: [
               Text(
-                'Xin chào, ${u.fullName} 👋',
-                style: Theme.of(context).textTheme.headlineSmall,
+                '${_getGreeting()}, ${u.fullName}',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Tổng quan hệ thống',
-                style: Theme.of(context).textTheme.bodyMedium,
+                'Chào mừng quay lại bảng điều khiển quản trị',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               _buildGrid(context, c),
             ],
           ),

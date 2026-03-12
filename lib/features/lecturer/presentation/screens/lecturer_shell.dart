@@ -13,6 +13,7 @@ import 'package:edutool/features/lecturer/presentation/bloc/lecturer_event.dart'
 import 'package:edutool/features/lecturer/presentation/bloc/lecturer_state.dart';
 import 'package:edutool/features/project/data/models/group_detail_response.dart';
 import 'package:edutool/features/project/data/models/project_response.dart';
+import 'package:edutool/shared/widgets/skeleton_loading.dart';
 
 /// Lecturer bottom-nav shell with 5 tabs.
 class LecturerShell extends StatefulWidget {
@@ -50,12 +51,12 @@ class _LecturerShellState extends State<LecturerShell> {
         ),
         body: IndexedStack(
           index: _currentIndex,
-          children: const [
-            _HomeTab(),
-            _GroupsTab(),
-            _ProjectsTab(),
-            _ReportsTab(),
-            _ProfileTab(),
+          children: [
+            _HomeTab(onTabChange: (i) => setState(() => _currentIndex = i)),
+            const _GroupsTab(),
+            const _ProjectsTab(),
+            const _ReportsTab(),
+            const _ProfileTab(),
           ],
         ),
         bottomNavigationBar: NavigationBar(
@@ -99,7 +100,15 @@ class _LecturerShellState extends State<LecturerShell> {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _HomeTab extends StatelessWidget {
-  const _HomeTab();
+  final ValueChanged<int> onTabChange;
+  const _HomeTab({required this.onTabChange});
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Chào buổi sáng ☀️';
+    if (hour < 18) return 'Chào buổi chiều 🌤️';
+    return 'Chào buổi tối 🌙';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +120,7 @@ class _HomeTab extends StatelessWidget {
           c is LecturerFailure,
       builder: (context, state) {
         if (state is LecturerLoading || state is LecturerInitial) {
-          return const Center(child: CircularProgressIndicator());
+          return const LecturerDashboardSkeleton();
         }
         if (state is LecturerFailure) {
           return Center(
@@ -154,13 +163,18 @@ class _HomeTab extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               children: [
                 Text(
-                  'Xin chào, ${u.fullName} 👋',
-                  style: theme.textTheme.headlineSmall,
+                  '${_getGreeting()}, ${u.fullName}',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Tổng quan hoạt động của bạn',
-                  style: theme.textTheme.bodyMedium,
+                  'Hôm nay bạn muốn kiểm tra lớp học nào?',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -173,19 +187,57 @@ class _HomeTab extends StatelessWidget {
                         value: '${courses.length}',
                         icon: Icons.class_outlined,
                         color: AppColors.primary,
+                        onTap: () {},
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _StatCard(
-                        label: 'Đang hoạt động',
-                        value:
-                            '${courses.where((c) => c.status == 'true' || c.status == 'ACTIVE').length}',
-                        icon: Icons.check_circle_outline,
-                        color: AppColors.success,
+                        label: 'Báo cáo mới',
+                        value: '4',
+                        icon: Icons.assessment_outlined,
+                        color: AppColors.warning,
+                        onTap: () => onTabChange(3),
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 32),
+
+                Text(
+                  'Truy cập nhanh',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 100,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _QuickActionItem(
+                        icon: Icons.add_box_outlined,
+                        label: 'Tạo Project',
+                        onTap: () => onTabChange(2),
+                      ),
+                      _QuickActionItem(
+                        icon: Icons.group_add_outlined,
+                        label: 'Gán nhóm',
+                        onTap: () => onTabChange(1),
+                      ),
+                      _QuickActionItem(
+                        icon: Icons.file_download_outlined,
+                        label: 'Xuất báo cáo',
+                        onTap: () => onTabChange(3),
+                      ),
+                      _QuickActionItem(
+                        icon: Icons.help_outline_rounded,
+                        label: 'Hỗ trợ',
+                        onTap: () {},
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -325,28 +377,203 @@ class _GroupsTabState extends State<_GroupsTab> {
     );
   }
 
+  void _showCreateGroupDialog(int courseId) async {
+    final bloc = context.read<LecturerBloc>();
+    setState(() => _loading = true);
+
+    try {
+      final enrollments = await bloc.repository.getEnrollmentsByCourse(courseId);
+      final projects = await bloc.repository.getProjectsByCourse(courseId);
+      setState(() => _loading = false);
+
+      if (!mounted) return;
+
+      if (projects.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng tạo project trước khi tạo nhóm')),
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        builder: (ctx) => _CreateGroupDialog(
+          courseId: courseId,
+          enrollments: enrollments,
+          projects: projects,
+          onAssign: (enrollmentIds, projectId, groupNumber) {
+            for (final id in enrollmentIds) {
+              bloc.add(
+                LecturerAssignStudentToGroup(
+                  enrollmentId: id,
+                  projectId: projectId,
+                  groupNumber: groupNumber,
+                ),
+              );
+            }
+          },
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể tải dữ liệu: $e')),
+        );
+      }
+    }
+  }
+
   Widget _buildContent() {
     if (_selectedCourseId == null) {
       return const Center(child: Text('Chọn một môn học'));
     }
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return Center(child: Text(_error!));
-    if (_groups == null || _groups!.isEmpty) {
-      return const Center(child: _EmptyMsg(message: 'Chưa có nhóm'));
-    }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _groups!.length,
-      itemBuilder: (context, index) => _GroupCard(
-        group: _groups![index],
-        onSelectRepo: (repoId) => context.read<LecturerBloc>().add(
-          LecturerSelectRepo(repoId: repoId),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _showCreateGroupDialog(_selectedCourseId!),
+              icon: const Icon(Icons.group_add_outlined),
+              label: const Text('Tạo nhóm mới'),
+            ),
+          ),
         ),
-        onDeleteRepo: (repoId) => context.read<LecturerBloc>().add(
-          LecturerDeleteRepo(repoId: repoId),
+        Expanded(
+          child: (_groups == null || _groups!.isEmpty)
+              ? const Center(child: _EmptyMsg(message: 'Chưa có nhóm'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _groups!.length,
+                  itemBuilder: (context, index) => _GroupCard(
+                    group: _groups![index],
+                    onSelectRepo: (repoId) => context.read<LecturerBloc>().add(
+                          LecturerSelectRepo(repoId: repoId),
+                        ),
+                    onDeleteRepo: (repoId) => context.read<LecturerBloc>().add(
+                          LecturerDeleteRepo(repoId: repoId),
+                        ),
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CreateGroupDialog extends StatefulWidget {
+  final int courseId;
+  final List<Map<String, dynamic>> enrollments;
+  final List<ProjectResponse> projects;
+  final void Function(List<int> enrollmentIds, int projectId, int groupNumber)
+      onAssign;
+
+  const _CreateGroupDialog({
+    required this.courseId,
+    required this.enrollments,
+    required this.projects,
+    required this.onAssign,
+  });
+
+  @override
+  State<_CreateGroupDialog> createState() => _CreateGroupDialogState();
+}
+
+class _CreateGroupDialogState extends State<_CreateGroupDialog> {
+  int? _selectedProjectId;
+  int _groupNumber = 1;
+  final List<int> _selectedEnrollmentIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.projects.isNotEmpty) {
+      _selectedProjectId = widget.projects.first.projectId;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Tạo nhóm mới'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Chọn Project:', style: TextStyle(fontWeight: FontWeight.bold)),
+              DropdownButton<int>(
+                isExpanded: true,
+                value: _selectedProjectId,
+                items: widget.projects
+                    .map((p) => DropdownMenuItem(
+                          value: p.projectId,
+                          child: Text(p.projectName),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedProjectId = v),
+              ),
+              const SizedBox(height: 16),
+              const Text('Số thứ tự nhóm:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: _groupNumber > 1 ? () => setState(() => _groupNumber--) : null,
+                    icon: const Icon(Icons.remove),
+                  ),
+                  Text('$_groupNumber', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    onPressed: () => setState(() => _groupNumber++),
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text('Chọn sinh viên:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('(Chỉ hiển thị SV chưa có project)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 8),
+              ...widget.enrollments
+                  .where((e) => e['projectId'] == null)
+                  .map((e) {
+                final id = e['enrollmentId'] as int;
+                return CheckboxListTile(
+                  title: Text(e['studentName'] ?? 'N/A'),
+                  subtitle: Text(e['studentCode'] ?? ''),
+                  value: _selectedEnrollmentIds.contains(id),
+                  onChanged: (val) {
+                    setState(() {
+                      if (val == true) {
+                        _selectedEnrollmentIds.add(id);
+                      } else {
+                        _selectedEnrollmentIds.remove(id);
+                      }
+                    });
+                  },
+                );
+              }),
+            ],
+          ),
         ),
       ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+        FilledButton(
+          onPressed: _selectedProjectId != null && _selectedEnrollmentIds.isNotEmpty
+              ? () {
+                  widget.onAssign(_selectedEnrollmentIds, _selectedProjectId!, _groupNumber);
+                  Navigator.pop(context);
+                }
+              : null,
+          child: const Text('Xác nhận'),
+        ),
+      ],
     );
   }
 }
@@ -1344,6 +1571,40 @@ class _ProfileTab extends StatelessWidget {
     );
   }
 
+  void _showUpdateProfileDialog(BuildContext context, User? user) {
+    if (user == null) return;
+    final nameCtrl = TextEditingController(text: user.fullName);
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cập nhật thông tin'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: nameCtrl,
+            decoration: const InputDecoration(labelText: 'Họ và tên'),
+            validator: (v) => v == null || v.isEmpty ? 'Bắt buộc' : null,
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
+          FilledButton(
+            onPressed: () {
+              if (!formKey.currentState!.validate()) return;
+              context.read<LecturerBloc>().add(
+                    LecturerUpdateProfile(fullName: nameCtrl.text.trim()),
+                  );
+              Navigator.pop(ctx);
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<LecturerBloc, LecturerState>(
@@ -1423,6 +1684,13 @@ class _ProfileTab extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: const Text('Cập nhật thông tin cá nhân'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showUpdateProfileDialog(context, user),
+              ),
+              const Divider(),
+              ListTile(
                 leading: const Icon(Icons.lock_outline),
                 title: const Text('Đổi mật khẩu'),
                 trailing: const Icon(Icons.chevron_right),
@@ -1456,31 +1724,100 @@ class _StatCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
+
   const _StatCard({
     required this.label,
     required this.value,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickActionItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 90,
+      margin: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 24),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 28),
+            ),
             const SizedBox(height: 8),
             Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+              label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                  ),
             ),
-            const SizedBox(height: 2),
-            Text(label, style: Theme.of(context).textTheme.labelSmall),
           ],
         ),
       ),

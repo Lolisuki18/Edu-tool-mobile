@@ -154,3 +154,31 @@ class LecturerDeletePeriodicReport extends LecturerEvent {
   @override
   List<Object?> get props => [reportId, courseId];
 }
+
+/// Assign student to a project/group.
+class LecturerAssignStudentToGroup extends LecturerEvent {
+  final int enrollmentId;
+  final int projectId;
+  final int groupNumber;
+  final String? role;
+
+  const LecturerAssignStudentToGroup({
+    required this.enrollmentId,
+    required this.projectId,
+    required this.groupNumber,
+    this.role,
+  });
+
+  @override
+  List<Object?> get props => [enrollmentId, projectId, groupNumber, role];
+}
+
+/// Update user profile.
+class LecturerUpdateProfile extends LecturerEvent {
+  final String fullName;
+
+  const LecturerUpdateProfile({required this.fullName});
+
+  @override
+  List<Object?> get props => [fullName];
+}

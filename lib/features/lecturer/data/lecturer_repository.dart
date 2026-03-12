@@ -393,6 +393,54 @@ class LecturerRepository {
     }
   }
 
+  /// PUT /api/enrollments/{id}
+  Future<void> assignStudentToGroup({
+    required int enrollmentId,
+    required int projectId,
+    required int groupNumber,
+    String? role,
+  }) async {
+    try {
+      final response = await _apiClient.dio.put(
+        ApiEndpoints.enrollmentById(enrollmentId.toString()),
+        data: {
+          'projectId': projectId,
+          'groupNumber': groupNumber,
+          if (role != null) 'roleInProject': role,
+        },
+      );
+      final base = BaseResponse<dynamic>.fromJson(
+        response.data as Map<String, dynamic>,
+        null,
+      );
+      if (!base.isSuccess) {
+        throw ServerException(message: base.message, code: base.code);
+      }
+    } on DioException catch (e) {
+      throw _mapDio(e, 'Không thể gán sinh viên vào nhóm');
+    }
+  }
+
+  /// PUT /api/users/{id}
+  Future<User> updateMe(String userId, Map<String, dynamic> data) async {
+    try {
+      final response = await _apiClient.dio.put(
+        ApiEndpoints.userById(userId),
+        data: data,
+      );
+      final base = BaseResponse<Map<String, dynamic>>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json as Map<String, dynamic>,
+      );
+      if (!base.isSuccess || base.data == null) {
+        throw ServerException(message: base.message, code: base.code);
+      }
+      return User.fromJson(base.data!);
+    } on DioException catch (e) {
+      throw _mapDio(e, 'Không thể cập nhật thông tin');
+    }
+  }
+
   ServerException _mapDio(DioException e, String fallback) {
     final data = e.response?.data;
     if (data is Map<String, dynamic>) {
