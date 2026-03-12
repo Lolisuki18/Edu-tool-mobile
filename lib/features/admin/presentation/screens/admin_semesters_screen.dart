@@ -4,6 +4,7 @@ import 'package:edutool/core/theme/app_colors.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_bloc.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_event.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_state.dart';
+import 'package:edutool/shared/models/models.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Admin Semesters Screen
@@ -11,6 +12,19 @@ import 'package:edutool/features/admin/presentation/bloc/admin_state.dart';
 
 class AdminSemestersScreen extends StatelessWidget {
   const AdminSemestersScreen({super.key});
+
+  Future<void> _selectDate(BuildContext context, TextEditingController ctrl) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+    if (picked != null) {
+      // Send as YYYY-MM-DD for UI, but handle ISO later if needed.
+      ctrl.text = picked.toIso8601String().split('T')[0];
+    }
+  }
 
   void _showCreateBottomSheet(BuildContext context) {
     final nameCtrl = TextEditingController();
@@ -46,19 +60,34 @@ class AdminSemestersScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Tên học kỳ (VD: FA24)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Tên học kỳ (VD: FA24)',
+                      prefixIcon: Icon(Icons.abc),
+                    ),
                     validator: (v) => v == null || v.isEmpty ? 'Không được để trống' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: startCtrl,
-                    decoration: const InputDecoration(labelText: 'Ngày bắt đầu (yyyy-MM-dd)'),
+                    readOnly: true,
+                    onTap: () => _selectDate(ctx, startCtrl),
+                    decoration: const InputDecoration(
+                      labelText: 'Ngày bắt đầu',
+                      prefixIcon: Icon(Icons.calendar_today),
+                      hintText: 'Chọn ngày',
+                    ),
                     validator: (v) => v == null || v.isEmpty ? 'Không được để trống' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: endCtrl,
-                    decoration: const InputDecoration(labelText: 'Ngày kết thúc (yyyy-MM-dd)'),
+                    readOnly: true,
+                    onTap: () => _selectDate(ctx, endCtrl),
+                    decoration: const InputDecoration(
+                      labelText: 'Ngày kết thúc',
+                      prefixIcon: Icon(Icons.event),
+                      hintText: 'Chọn ngày',
+                    ),
                     validator: (v) => v == null || v.isEmpty ? 'Không được để trống' : null,
                   ),
                   const SizedBox(height: 24),
@@ -77,9 +106,11 @@ class AdminSemestersScreen extends StatelessWidget {
                           onPressed: () {
                             if (!formKey.currentState!.validate()) return;
                             Navigator.pop(ctx);
+                            
+                            // Match Web's SemesterFormData: name, startDate, endDate + mandatory status: true
                             context.read<AdminBloc>().add(
                               AdminCreateSemester({
-                                'semesterName': nameCtrl.text.trim(),
+                                'name': nameCtrl.text.trim(),
                                 'startDate': startCtrl.text.trim(),
                                 'endDate': endCtrl.text.trim(),
                                 'status': true,
@@ -102,12 +133,12 @@ class AdminSemestersScreen extends StatelessWidget {
     );
   }
 
-  void _showUpdateBottomSheet(BuildContext context, dynamic s) {
+  void _showUpdateBottomSheet(BuildContext context, Semester s) {
     final nameCtrl = TextEditingController(text: s.name);
     final startCtrl = TextEditingController(text: s.startDate);
     final endCtrl = TextEditingController(text: s.endDate);
     final formKey = GlobalKey<FormState>();
-    bool isActive = s.isActive;
+    bool isActive = s.status;
 
     showModalBottomSheet(
       context: context,
@@ -131,25 +162,38 @@ class AdminSemestersScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Cập nhật Học kỳ: ${s.name}',
+                    'Cập nhật Học kỳ',
                     style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Tên học kỳ (VD: FA24)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Tên học kỳ (VD: FA24)',
+                      prefixIcon: Icon(Icons.abc),
+                    ),
                     validator: (v) => v == null || v.isEmpty ? 'Không được để trống' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: startCtrl,
-                    decoration: const InputDecoration(labelText: 'Ngày bắt đầu (yyyy-MM-dd)'),
+                    readOnly: true,
+                    onTap: () => _selectDate(ctx, startCtrl),
+                    decoration: const InputDecoration(
+                      labelText: 'Ngày bắt đầu',
+                      prefixIcon: Icon(Icons.calendar_today),
+                    ),
                     validator: (v) => v == null || v.isEmpty ? 'Không được để trống' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: endCtrl,
-                    decoration: const InputDecoration(labelText: 'Ngày kết thúc (yyyy-MM-dd)'),
+                    readOnly: true,
+                    onTap: () => _selectDate(ctx, endCtrl),
+                    decoration: const InputDecoration(
+                      labelText: 'Ngày kết thúc',
+                      prefixIcon: Icon(Icons.event),
+                    ),
                     validator: (v) => v == null || v.isEmpty ? 'Không được để trống' : null,
                   ),
                   const SizedBox(height: 12),
@@ -180,7 +224,7 @@ class AdminSemestersScreen extends StatelessWidget {
                               AdminUpdateSemester(
                                 id: s.semesterId,
                                 body: {
-                                  'semesterName': nameCtrl.text.trim(),
+                                  'name': nameCtrl.text.trim(),
                                   'startDate': startCtrl.text.trim(),
                                   'endDate': endCtrl.text.trim(),
                                   'status': isActive,

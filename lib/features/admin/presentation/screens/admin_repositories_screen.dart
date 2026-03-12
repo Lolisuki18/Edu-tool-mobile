@@ -87,12 +87,16 @@ class _AdminRepositoriesScreenState extends State<AdminRepositoriesScreen> {
               labelText: 'Chọn môn học',
               border: OutlineInputBorder(),
               isDense: true,
+              prefixIcon: Icon(Icons.school),
             ),
             items: _courses!.map((c) {
               final id = int.tryParse(c.courseId) ?? 0;
               return DropdownMenuItem(
                 value: id,
-                child: Text('${c.courseCode} – ${c.courseName}'),
+                child: Text(
+                  '${c.courseCode} – ${c.courseName}',
+                  overflow: TextOverflow.ellipsis,
+                ),
               );
             }).toList(),
             onChanged: _onCourseChanged,
@@ -163,20 +167,23 @@ class _AdminRepositoriesScreenState extends State<AdminRepositoriesScreen> {
                                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                                       ),
                                       const SizedBox(height: 8),
-                                      Row(
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 4,
                                         children: [
                                           Chip(
-                                            label: Text('${g.memberCount} thành viên', style: const TextStyle(fontSize: 12, color: AppColors.primary)),
+                                            label: Text('${g.memberCount} SV', style: const TextStyle(fontSize: 11, color: AppColors.primary)),
                                             backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                                             visualDensity: VisualDensity.compact,
-                                            avatar: const Icon(Icons.people, size: 16, color: AppColors.primary),
+                                            padding: EdgeInsets.zero,
+                                            avatar: const Icon(Icons.people, size: 14, color: AppColors.primary),
                                           ),
-                                          const SizedBox(width: 8),
                                           Chip(
-                                            label: Text('${g.repoCount} repos', style: const TextStyle(fontSize: 12, color: AppColors.success)),
+                                            label: Text('${g.repoCount} repos', style: const TextStyle(fontSize: 11, color: AppColors.success)),
                                             backgroundColor: AppColors.success.withValues(alpha: 0.1),
                                             visualDensity: VisualDensity.compact,
-                                            avatar: const Icon(Icons.folder, size: 16, color: AppColors.success),
+                                            padding: EdgeInsets.zero,
+                                            avatar: const Icon(Icons.folder, size: 14, color: AppColors.success),
                                           ),
                                         ],
                                       ),

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:edutool/core/constants/api_endpoints.dart';
 
 /// Attaches the stored access token to every request except `/auth/*` paths.
 class AuthInterceptor extends Interceptor {
@@ -15,9 +16,16 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    // Skip auth endpoints – they don't need a Bearer token.
+    // List of endpoints that definitely DO NOT need a token
+    const publicPaths = [
+      ApiEndpoints.login,
+      ApiEndpoints.register,
+      ApiEndpoints.refresh,
+      ApiEndpoints.verify,
+    ];
+
     final path = options.path;
-    if (path.startsWith('/api/auth/') || path.startsWith('/api/auth')) {
+    if (publicPaths.contains(path)) {
       return handler.next(options);
     }
 

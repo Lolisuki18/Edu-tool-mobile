@@ -63,7 +63,7 @@ class _AdminExportedReportsScreenState extends State<AdminExportedReportsScreen>
   Future<void> _openReportUrl(String url) async {
     final uri = Uri.tryParse(url);
     if (uri != null && await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

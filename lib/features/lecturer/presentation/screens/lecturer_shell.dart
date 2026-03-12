@@ -794,6 +794,7 @@ class _CommitReportSectionState extends State<_CommitReportSection> {
           const Center(child: CircularProgressIndicator())
         else
           DropdownButtonFormField<int>(
+            isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'Chọn Project',
               border: OutlineInputBorder(),
