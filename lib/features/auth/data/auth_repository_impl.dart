@@ -40,6 +40,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Persist access token right after a successful login.
       await _apiClient.authInterceptor.saveAccessToken(base.data!.accessToken);
+      if (base.data!.refreshToken != null) {
+        await _apiClient.authInterceptor.saveRefreshToken(base.data!.refreshToken!);
+      }
 
       return base.data!;
     } on DioException catch (e) {
@@ -68,7 +71,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await _apiClient.dio.post(ApiEndpoints.logout);
     } finally {
-      await _apiClient.authInterceptor.clearAccessToken();
+      await _apiClient.authInterceptor.clearAllTokens();
     }
   }
 

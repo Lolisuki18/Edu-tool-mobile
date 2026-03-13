@@ -15,6 +15,7 @@ class LoginResponse {
   final String email;
   final String status;
   final String accessToken;
+  final String? refreshToken;
 
   const LoginResponse({
     required this.role,
@@ -22,6 +23,7 @@ class LoginResponse {
     required this.email,
     required this.status,
     required this.accessToken,
+    this.refreshToken,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class LoginResponse {
       email: json['email'] as String? ?? '',
       status: json['status'] as String? ?? '',
       accessToken: json['accessToken'] as String? ?? '',
+      refreshToken: json['refreshToken'] as String?,
     );
   }
 }

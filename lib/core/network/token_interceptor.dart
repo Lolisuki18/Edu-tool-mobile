@@ -3,15 +3,16 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:edutool/core/network/auth_interceptor.dart';
 import 'package:edutool/core/network/session_manager.dart';
+import 'package:edutool/core/constants/api_endpoints.dart';
 
-/// Intercepts 401 responses, refreshes the access token via
-/// `POST /auth/refresh` (cookie-based), and retries the original request.
+/// Intercepts 401/403 responses, refreshes the access token via
+/// `POST /api/auth/refresh` (body + cookie), and retries the original request.
 ///
 /// Flow:
-/// 1. Catch 401 Unauthorized.
-/// 2. Lock [_dio] so all other in-flight requests queue up.
-/// 3. Call `POST /auth/refresh` (refresh token travels as HttpOnly cookie).
-/// 4a. If refresh succeeds → save new access token, unlock, retry queued requests.
+/// 1. Catch 401 Unauthorized or 403 Forbidden.
+/// 2. QueuedInterceptor handles locking and queuing automatically.
+/// 3. Call `POST /api/auth/refresh` with refresh token in body.
+/// 4a. If refresh succeeds → save new access token, retry queued requests.
 /// 4b. If refresh fails   → clear tokens, fire [SessionEvent.expired], reject.
 class TokenInterceptor extends QueuedInterceptor {
   final Dio _dio;
@@ -47,33 +48,45 @@ class TokenInterceptor extends QueuedInterceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    // Only handle 401 Unauthorized.
-    if (err.response?.statusCode != 401) {
+    final statusCode = err.response?.statusCode;
+    // Handle both 401 and 403, as backend might use either for expired tokens.
+    if (statusCode != 401 && statusCode != 403) {
       return handler.next(err);
     }
 
-    // Don't retry refresh endpoint itself to avoid infinite loop.
+    // Don't retry refresh or login endpoints to avoid infinite loops or unnecessary overhead.
     final requestPath = err.requestOptions.path;
-    if (requestPath.startsWith('/auth/')) {
+    if (requestPath.contains(ApiEndpoints.refresh) || 
+        requestPath.contains(ApiEndpoints.login)) {
       return handler.next(err);
     }
 
     try {
       // ── Step 1: Refresh ────────────────────────────────────────────
-      final refreshResponse = await _refreshDio.post('/auth/refresh');
+      final refreshToken = await _authInterceptor.getRefreshToken();
+      
+      final refreshResponse = await _refreshDio.post(
+        ApiEndpoints.refresh,
+        data: refreshToken != null ? {'refreshToken': refreshToken} : null,
+      );
+      
       final data = refreshResponse.data as Map<String, dynamic>?;
 
       final isSuccess = data?['isSuccess'] as bool? ?? false;
-      final newToken =
-          (data?['data'] as Map<String, dynamic>?)?['accessToken'] as String?;
+      final responseData = data?['data'] as Map<String, dynamic>?;
+      final newToken = responseData?['accessToken'] as String?;
+      final newRefreshToken = responseData?['refreshToken'] as String?;
 
       if (!isSuccess || newToken == null || newToken.isEmpty) {
         await _onRefreshFailed(err, handler);
         return;
       }
 
-      // ── Step 2: Persist the new token ──────────────────────────────
+      // ── Step 2: Persist the new tokens ──────────────────────────────
       await _authInterceptor.saveAccessToken(newToken);
+      if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
+        await _authInterceptor.saveRefreshToken(newRefreshToken);
+      }
 
       // ── Step 3: Retry the original failed request ──────────────────
       final retryOptions = err.requestOptions;
@@ -91,7 +104,7 @@ class TokenInterceptor extends QueuedInterceptor {
     DioException originalError,
     ErrorInterceptorHandler handler,
   ) async {
-    await _authInterceptor.clearAccessToken();
+    await _authInterceptor.clearAllTokens();
     SessionManager.instance.expireSession();
     handler.reject(originalError);
   }
