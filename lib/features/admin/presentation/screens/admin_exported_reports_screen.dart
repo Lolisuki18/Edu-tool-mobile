@@ -249,7 +249,7 @@ class _AdminExportedReportsScreenState extends State<AdminExportedReportsScreen>
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: AppColors.success.withValues(alpha: 0.1),
+                                      color: AppColors.success.withOpacity(0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(Icons.table_chart, color: AppColors.success),

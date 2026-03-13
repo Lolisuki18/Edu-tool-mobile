@@ -5,6 +5,7 @@ import 'package:edutool/features/admin/presentation/bloc/admin_bloc.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_event.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_state.dart';
 import 'package:edutool/features/admin/presentation/widgets/admin_pagination_bar.dart';
+import 'package:edutool/shared/models/models.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Admin Lecturers Screen
@@ -29,7 +30,9 @@ class _AdminLecturersScreenState extends State<AdminLecturersScreen> {
   void _showCreateLecturerBottomSheet() {
     final staffCodeCtrl = TextEditingController();
     final userIdCtrl = TextEditingController();
+    final userNameCtrl = TextEditingController(); // To display the selected user's name
     final formKey = GlobalKey<FormState>();
+    User? selectedUser;
 
     showModalBottomSheet(
       context: context,
@@ -37,69 +40,119 @@ class _AdminLecturersScreenState extends State<AdminLecturersScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 16,
-            right: 16,
-            top: 24,
-          ),
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Tạo Giảng Viên Mới',
-                    style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: staffCodeCtrl,
-                    decoration: const InputDecoration(labelText: 'Mã giảng viên (VD: NV012)'),
-                    validator: (v) => v == null || v.isEmpty ? 'Không được để trống' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: userIdCtrl,
-                    decoration: const InputDecoration(labelText: 'ID Người dùng (User ID)'),
-                    keyboardType: TextInputType.number,
-                    validator: (v) => v == null || v.isEmpty ? 'Không được để trống' : null,
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                          child: const Text('Hủy'),
-                        ),
+      builder: (ctx) => BlocProvider(
+        create: (_) => AdminBloc(repository: context.read<AdminBloc>().repository)
+          ..add(const AdminLoadUsers(role: 'LECTURER', size: 100)),
+        child: StatefulBuilder(
+          builder: (ctx, setModalState) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              left: 16,
+              right: 16,
+              top: 24,
+            ),
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Tạo Giảng Viên Mới',
+                      style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: staffCodeCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Mã giảng viên (VD: NV012)',
+                        prefixIcon: Icon(Icons.badge_outlined),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () {
-                            if (!formKey.currentState!.validate()) return;
-                            Navigator.pop(ctx);
-                            context.read<AdminBloc>().add(
-                              AdminCreateLecturer({
-                                'staffCode': staffCodeCtrl.text.trim(),
-                                'userId': int.tryParse(userIdCtrl.text.trim()),
-                              }),
-                            );
-                          },
-                          style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                          child: const Text('Tạo Giảng Viên'),
+                      validator: (v) => v == null || v.isEmpty ? 'Không được để trống' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    BlocBuilder<AdminBloc, AdminState>(
+                      builder: (ctx, state) {
+                        final isLoading = state is AdminLoading;
+                        final users = state is AdminUsersLoaded ? state.data.content : <User>[];
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (isLoading)
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: 8.0),
+                                child: LinearProgressIndicator(),
+                              ),
+                            DropdownButtonFormField<User>(
+                              value: selectedUser,
+                              decoration: const InputDecoration(
+                                labelText: 'Chọn Người dùng (User)',
+                                prefixIcon: Icon(Icons.person_outline),
+                                helperText: 'Chỉ hiển thị người dùng có vai trò LECTURER',
+                              ),
+                              items: users.map((u) {
+                                return DropdownMenuItem<User>(
+                                  value: u,
+                                  child: Text('${u.fullName} (${u.username})'),
+                                );
+                              }).toList(),
+                              onChanged: isLoading || users.isEmpty ? null : (u) {
+                                setModalState(() {
+                                  selectedUser = u;
+                                  if (u != null) {
+                                    userIdCtrl.text = u.userId;
+                                    userNameCtrl.text = u.fullName;
+                                  }
+                                });
+                              },
+                              validator: (v) => v == null ? 'Vui lòng chọn một người dùng' : null,
+                            ),
+                            if (!isLoading && users.isEmpty && state is AdminUsersLoaded)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  'Không tìm thấy người dùng có vai trò LECTURER nào.',
+                                  style: TextStyle(color: AppColors.error, fontSize: 12),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                            child: const Text('Hủy'),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () {
+                              if (!formKey.currentState!.validate()) return;
+                              Navigator.pop(ctx);
+                              context.read<AdminBloc>().add(
+                                AdminCreateLecturer({
+                                  'staffCode': staffCodeCtrl.text.trim(),
+                                  'userId': int.tryParse(userIdCtrl.text.trim()),
+                                }),
+                              );
+                            },
+                            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                            child: const Text('Tạo Giảng Viên'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
           ),
@@ -127,7 +180,7 @@ class _AdminLecturersScreenState extends State<AdminLecturersScreen> {
                   CircleAvatar(
                     radius: 30,
                     child: Text(
-                      l.staffCode.isNotEmpty ? l.staffCode.substring(0, 2) : '?',
+                      l.staffCode.length >= 2 ? l.staffCode.substring(0, 2) : l.staffCode.isEmpty ? '?' : l.staffCode,
                       style: const TextStyle(fontSize: 24),
                     ),
                   ),
@@ -291,9 +344,9 @@ class _AdminLecturersScreenState extends State<AdminLecturersScreen> {
                               onTap: () => _showLecturerDetailBottomSheet(l),
                               leading: CircleAvatar(
                               child: Text(
-                                l.staffCode.isNotEmpty
-                                    ? l.staffCode.substring(0, 2)
-                                    : '?',
+                                    l.staffCode.length >= 2
+                                        ? l.staffCode.substring(0, 2)
+                                        : l.staffCode.isEmpty ? '?' : l.staffCode,
                               ),
                             ),
                             title: Text(

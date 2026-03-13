@@ -173,14 +173,14 @@ class _AdminRepositoriesScreenState extends State<AdminRepositoriesScreen> {
                                         children: [
                                           Chip(
                                             label: Text('${g.memberCount} SV', style: const TextStyle(fontSize: 11, color: AppColors.primary)),
-                                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                            backgroundColor: AppColors.primary.withOpacity(0.1),
                                             visualDensity: VisualDensity.compact,
                                             padding: EdgeInsets.zero,
                                             avatar: const Icon(Icons.people, size: 14, color: AppColors.primary),
                                           ),
                                           Chip(
                                             label: Text('${g.repoCount} repos', style: const TextStyle(fontSize: 11, color: AppColors.success)),
-                                            backgroundColor: AppColors.success.withValues(alpha: 0.1),
+                                            backgroundColor: AppColors.success.withOpacity(0.1),
                                             visualDensity: VisualDensity.compact,
                                             padding: EdgeInsets.zero,
                                             avatar: const Icon(Icons.folder, size: 14, color: AppColors.success),

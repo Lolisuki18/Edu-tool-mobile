@@ -251,9 +251,7 @@ class _HomeTab extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: AppColors.primary.withValues(
-                            alpha: 0.1,
-                          ),
+                          backgroundColor: AppColors.primary.withOpacity(0.1),
                           child: Text(
                             c.courseCode.length >= 3
                                 ? c.courseCode.substring(0, 3)
@@ -1460,10 +1458,8 @@ class _PeriodicReportSectionState extends State<_PeriodicReportSection> {
                                   label: Text(r.status),
                                   visualDensity: VisualDensity.compact,
                                   backgroundColor: r.status == 'ACTIVE'
-                                      ? AppColors.success.withValues(
-                                          alpha: 0.15,
-                                        )
-                                      : null,
+                                      ? AppColors.success.withOpacity(0.1)
+                                      : AppColors.error.withOpacity(0.1),
                                 ),
                                 const SizedBox(width: 4),
                                 IconButton(
@@ -1492,6 +1488,7 @@ class _PeriodicReportSectionState extends State<_PeriodicReportSection> {
       ],
     );
   }
+
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1748,7 +1745,7 @@ class _StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 24),
@@ -1804,7 +1801,7 @@ class _QuickActionItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(icon, color: AppColors.primary, size: 28),
@@ -1848,7 +1845,7 @@ class _GroupCard extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
                   child: Text(
                     'G${group.groupNumber}',
                     style: theme.textTheme.bodyLarge?.copyWith(

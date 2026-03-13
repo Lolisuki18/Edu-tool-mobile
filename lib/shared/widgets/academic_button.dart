@@ -69,8 +69,8 @@ class AcademicButton extends StatelessWidget {
     final buttonStyle = ElevatedButton.styleFrom(
       backgroundColor: _backgroundColor,
       foregroundColor: _foregroundColor,
-      disabledBackgroundColor: _backgroundColor.withValues(alpha: 0.5),
-      disabledForegroundColor: _foregroundColor.withValues(alpha: 0.7),
+      disabledBackgroundColor: _backgroundColor.withOpacity(0.5),
+      disabledForegroundColor: _foregroundColor.withOpacity(0.7),
       minimumSize: Size(width, 48),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),

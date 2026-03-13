@@ -312,9 +312,7 @@ class _CoursesTab extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: AppColors.primary.withValues(
-                            alpha: 0.1,
-                          ),
+                          backgroundColor: AppColors.primary.withOpacity(0.1),
                           child: Text(
                             e.courseCode.length >= 3
                                 ? e.courseCode.substring(0, 3)
@@ -776,7 +774,7 @@ class _StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 24),
@@ -832,7 +830,7 @@ class _QuickActionItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(icon, color: AppColors.primary, size: 28),
@@ -864,7 +862,7 @@ class _CourseCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.divider.withValues(alpha: 0.5)),
+        side: BorderSide(color: AppColors.divider.withOpacity(0.5)),
       ),
       child: InkWell(
         onTap: () => context.push('/student/reports/${e.courseId}'),
@@ -872,7 +870,7 @@ class _CourseCard extends StatelessWidget {
           padding: const EdgeInsets.all(4),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              backgroundColor: AppColors.primary.withOpacity(0.1),
               child: Text(
                 e.courseCode.length >= 3
                     ? e.courseCode.substring(0, 3)
@@ -966,7 +964,7 @@ class _GroupCard extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
                   child: Text(
                     'G${group.groupNumber}',
                     style: theme.textTheme.bodyLarge?.copyWith(

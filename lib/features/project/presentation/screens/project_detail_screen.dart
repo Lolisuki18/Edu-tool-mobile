@@ -233,7 +233,7 @@ class _GroupCard extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
                   child: Text(
                     'G${group.groupNumber}',
                     style: theme.textTheme.bodyLarge?.copyWith(
@@ -412,7 +412,7 @@ class _RepoTile extends StatelessWidget {
       trailing: repo.isSelected
           ? Chip(
               label: const Text('Tracking'),
-              backgroundColor: AppColors.success.withValues(alpha: 0.1),
+              backgroundColor: AppColors.success.withOpacity(0.1),
               labelStyle: Theme.of(
                 context,
               ).textTheme.labelSmall?.copyWith(color: AppColors.success),

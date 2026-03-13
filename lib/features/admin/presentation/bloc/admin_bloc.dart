@@ -75,7 +75,9 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     try {
       final data = await _repository.getUsers(
         page: event.page,
+        size: event.size,
         search: event.search,
+        role: event.role,
       );
       emit(AdminUsersLoaded(data));
     } catch (e) {

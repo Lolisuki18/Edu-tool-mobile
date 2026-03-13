@@ -157,16 +157,16 @@ class AdminDashboardContent extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 gradient: LinearGradient(
                   colors: [
-                    item.color.withValues(alpha: 0.15),
-                    item.color.withValues(alpha: 0.05),
+                    item.color.withOpacity(0.15),
+                    item.color.withOpacity(0.05),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                border: Border.all(color: item.color.withValues(alpha: 0.3)),
+                border: Border.all(color: item.color.withOpacity(0.3)),
                 boxShadow: [
                   BoxShadow(
-                    color: item.color.withValues(alpha: 0.1),
+                    color: item.color.withOpacity(0.1),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -180,7 +180,7 @@ class AdminDashboardContent extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: item.color.withValues(alpha: 0.2),
+                      color: item.color.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(item.icon, color: item.color, size: 24),

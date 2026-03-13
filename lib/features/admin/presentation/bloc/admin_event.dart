@@ -13,11 +13,13 @@ class AdminLoadDashboard extends AdminEvent {
 
 class AdminLoadUsers extends AdminEvent {
   final int page;
+  final int size;
   final String? search;
-  const AdminLoadUsers({this.page = 0, this.search});
+  final String? role;
+  const AdminLoadUsers({this.page = 0, this.size = 10, this.search, this.role});
 
   @override
-  List<Object?> get props => [page, search];
+  List<Object?> get props => [page, size, search, role];
 }
 
 class AdminCreateUser extends AdminEvent {

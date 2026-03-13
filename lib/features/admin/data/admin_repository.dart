@@ -25,12 +25,17 @@ class AdminRepository {
     int page = 0,
     int size = 10,
     String? search,
+    String? role,
   }) async {
+    final extra = <String, dynamic>{};
+    if (role != null) extra['role'] = role;
+
     return _getPaginated(
       ApiEndpoints.users,
       page: page,
       size: size,
       search: search,
+      extra: extra,
       fromJson: User.fromJson,
     );
   }

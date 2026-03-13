@@ -187,11 +187,11 @@ class _NotificationTile extends StatelessWidget {
       onTap: onTap,
       tileColor: notification.isRead
           ? null
-          : AppColors.primary.withValues(alpha: 0.05),
+          : AppColors.primary.withOpacity(0.05),
       leading: CircleAvatar(
         backgroundColor: notification.isRead
-            ? AppColors.textHint.withValues(alpha: 0.2)
-            : AppColors.primary.withValues(alpha: 0.15),
+            ? AppColors.textHint.withOpacity(0.2)
+            : AppColors.primary.withOpacity(0.15),
         child: Icon(
           _iconForPayload(notification.payload),
           color: notification.isRead ? AppColors.textHint : AppColors.primary,

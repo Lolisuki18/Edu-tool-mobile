@@ -20,25 +20,25 @@ class StatusBadge extends StatelessWidget {
       case 'ADMIN':
         return StatusBadge(
           label: 'Admin',
-          backgroundColor: AppColors.error.withValues(alpha: 0.12),
+          backgroundColor: AppColors.error.withOpacity(0.12),
           textColor: AppColors.error,
         );
       case 'LECTURER':
         return StatusBadge(
           label: 'Lecturer',
-          backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+          backgroundColor: AppColors.primary.withOpacity(0.12),
           textColor: AppColors.primary,
         );
       case 'STUDENT':
         return StatusBadge(
           label: 'Student',
-          backgroundColor: AppColors.success.withValues(alpha: 0.12),
+          backgroundColor: AppColors.success.withOpacity(0.12),
           textColor: AppColors.success,
         );
       default:
         return StatusBadge(
           label: role,
-          backgroundColor: AppColors.secondary.withValues(alpha: 0.12),
+          backgroundColor: AppColors.secondary.withOpacity(0.12),
           textColor: AppColors.secondary,
         );
     }
@@ -50,8 +50,8 @@ class StatusBadge extends StatelessWidget {
     return StatusBadge(
       label: status,
       backgroundColor: isActive
-          ? AppColors.success.withValues(alpha: 0.12)
-          : AppColors.warning.withValues(alpha: 0.12),
+          ? AppColors.success.withOpacity(0.12)
+          : AppColors.warning.withOpacity(0.12),
       textColor: isActive ? AppColors.success : AppColors.warning,
     );
   }

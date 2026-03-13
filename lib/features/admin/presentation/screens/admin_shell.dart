@@ -125,7 +125,7 @@ class AdminShell extends StatelessWidget {
                     ),
                   ),
                   selected: i == selectedIndex,
-                  selectedTileColor: AppColors.primary.withValues(alpha: 0.08),
+                  selectedTileColor: AppColors.primary.withOpacity(0.08),
                   onTap: () {
                     Navigator.pop(context); // close drawer
                     if (i != selectedIndex) {

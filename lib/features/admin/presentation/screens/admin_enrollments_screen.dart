@@ -497,7 +497,7 @@ class _AdminEnrollmentsScreenState extends State<AdminEnrollmentsScreen> {
                                     label: Text(e.projectCode ?? 'Assigned'),
                                     visualDensity: VisualDensity.compact,
                                     backgroundColor: AppColors.success
-                                        .withValues(alpha: 0.15),
+                                        .withOpacity(0.15),
                                   )
                                 else
                                   const Chip(
