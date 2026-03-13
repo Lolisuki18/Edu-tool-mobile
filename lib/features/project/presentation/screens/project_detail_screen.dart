@@ -66,7 +66,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           ),
           FilledButton(
             onPressed: () {
-              if (!formKey.currentState!.validate()) return;
+              if (!(formKey.currentState?.validate() ?? false)) return;
               context.read<ProjectBloc>().add(
                 ProjectSubmitRepo(
                   projectId: projectId,

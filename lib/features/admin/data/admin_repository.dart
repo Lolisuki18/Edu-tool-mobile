@@ -293,10 +293,11 @@ class AdminRepository {
         response.data as Map<String, dynamic>,
         (json) => json as Map<String, dynamic>,
       );
-      if (!base.isSuccess || base.data == null) {
-        throw ServerException(message: base.message, code: base.code);
+      final data = base.data;
+      if (data == null) {
+        throw ServerException(message: 'Dữ liệu không hợp lệ', code: base.code);
       }
-      return base.data!;
+      return data;
     } on DioException catch (e) {
       throw _mapDio(e, 'Request failed');
     }

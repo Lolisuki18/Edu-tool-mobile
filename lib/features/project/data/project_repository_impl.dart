@@ -41,7 +41,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
         );
       }
 
-      return base.data!
+      return (base.data ?? [])
           .map((e) => ProjectResponse.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
@@ -58,8 +58,13 @@ class ProjectRepositoryImpl implements ProjectRepository {
         ApiEndpoints.repositoriesByCourse(courseId.toString()),
       );
 
+      final responseData = response.data;
+      if (responseData is! Map<String, dynamic>) {
+        throw ServerException(message: 'Phản hồi từ server không đúng định dạng', code: response.statusCode ?? 0);
+      }
+
       final base = BaseResponse<List<dynamic>>.fromJson(
-        response.data as Map<String, dynamic>,
+        responseData,
         (json) => json as List<dynamic>,
       );
 
@@ -71,11 +76,16 @@ class ProjectRepositoryImpl implements ProjectRepository {
         );
       }
 
-      return base.data!
+      final data = base.data;
+      if (data == null) return [];
+
+      return data
           .map((e) => GroupDetailResponse.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
       throw _mapDioError(e, 'Không thể tải thông tin nhóm');
+    } catch (e) {
+      throw ServerException(message: 'Lỗi xử lý dữ liệu: $e', code: 0);
     }
   }
 
@@ -137,7 +147,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
         );
       }
 
-      return base.data!
+      return (base.data ?? [])
           .map((e) => GithubRepoResponse.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
@@ -291,7 +301,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
         );
       }
 
-      return base.data!
+      return (base.data ?? [])
           .map((e) => CommitReportUrlResponse.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {

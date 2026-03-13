@@ -93,7 +93,7 @@ class TokenInterceptor extends QueuedInterceptor {
       );
       
       final data = refreshResponse.data as Map<String, dynamic>?;
-      final isSuccess = data?['isSuccess'] as bool? ?? false;
+      final isSuccess = data?['isSuccess'] as bool? ?? data?['success'] as bool? ?? false;
       final responseData = data?['data'] as Map<String, dynamic>?;
       final newToken = responseData?['accessToken'] as String?;
       final newRefreshToken = responseData?['refreshToken'] as String?;

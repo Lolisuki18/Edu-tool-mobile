@@ -34,17 +34,17 @@ class GroupDetailResponse {
 
   factory GroupDetailResponse.fromJson(Map<String, dynamic> json) {
     return GroupDetailResponse(
-      groupNumber: json['groupNumber'] as int? ?? 0,
-      projectId: json['projectId'] as int? ?? 0,
-      projectCode: json['projectCode'] as String? ?? '',
-      projectName: json['projectName'] as String? ?? '',
-      projectDescription: json['projectDescription'] as String?,
-      projectTechnologies: json['projectTechnologies'] as String?,
-      courseId: json['courseId'] as int? ?? 0,
-      courseCode: json['courseCode'] as String? ?? '',
-      courseName: json['courseName'] as String? ?? '',
-      memberCount: json['memberCount'] as int? ?? 0,
-      repoCount: json['repoCount'] as int? ?? 0,
+      groupNumber: (json['groupNumber'] as num?)?.toInt() ?? 0,
+      projectId: (json['projectId'] as num?)?.toInt() ?? 0,
+      projectCode: json['projectCode']?.toString() ?? '',
+      projectName: json['projectName']?.toString() ?? '',
+      projectDescription: json['projectDescription']?.toString(),
+      projectTechnologies: json['projectTechnologies']?.toString(),
+      courseId: (json['courseId'] as num?)?.toInt() ?? 0,
+      courseCode: json['courseCode']?.toString() ?? '',
+      courseName: json['courseName']?.toString() ?? '',
+      memberCount: int.tryParse(json['memberCount']?.toString() ?? '0') ?? 0,
+      repoCount: int.tryParse(json['repoCount']?.toString() ?? '0') ?? 0,
       members:
           (json['members'] as List<dynamic>?)
               ?.map((e) => GroupMember.fromJson(e as Map<String, dynamic>))
@@ -78,12 +78,13 @@ class GroupMember {
 
   factory GroupMember.fromJson(Map<String, dynamic> json) {
     return GroupMember(
-      studentId: json['studentId'] as int? ?? 0,
-      studentCode: json['studentCode'] as String? ?? '',
-      fullName: json['fullName'] as String? ?? '',
-      githubUsername: json['githubUsername'] as String?,
-      email: json['email'] as String?,
-      roleInProject: json['roleInProject'] as String?,
+      studentId: (json['studentId'] as num?)?.toInt() ??
+                 int.tryParse(json['studentId']?.toString() ?? '0') ?? 0,
+      studentCode: json['studentCode']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? '',
+      githubUsername: json['githubUsername']?.toString(),
+      email: json['email']?.toString(),
+      roleInProject: json['roleInProject']?.toString(),
     );
   }
 }
@@ -113,15 +114,17 @@ class GroupRepo {
 
   factory GroupRepo.fromJson(Map<String, dynamic> json) {
     return GroupRepo(
-      repoId: json['repoId'] as int? ?? 0,
-      repoUrl: json['repoUrl'] as String? ?? '',
-      repoName: json['repoName'] as String? ?? '',
-      owner: json['owner'] as String? ?? '',
-      isSelected: json['isSelected'] as bool? ?? false,
-      projectId: json['projectId'] as int? ?? 0,
-      projectName: json['projectName'] as String? ?? '',
-      projectCode: json['projectCode'] as String? ?? '',
-      createdAt: json['createdAt'] as String?,
+      repoId: (json['repoId'] as num?)?.toInt() ??
+              int.tryParse(json['repoId']?.toString() ?? '0') ?? 0,
+      repoUrl: json['repoUrl']?.toString() ?? '',
+      repoName: json['repoName']?.toString() ?? '',
+      owner: json['owner']?.toString() ?? '',
+      isSelected: json['isSelected'] == true,
+      projectId: (json['projectId'] as num?)?.toInt() ??
+                 int.tryParse(json['projectId']?.toString() ?? '0') ?? 0,
+      projectName: json['projectName']?.toString() ?? '',
+      projectCode: json['projectCode']?.toString() ?? '',
+      createdAt: json['createdAt']?.toString(),
     );
   }
 }

@@ -22,14 +22,14 @@ class CommitReportUrlResponse {
 
   factory CommitReportUrlResponse.fromJson(Map<String, dynamic> json) {
     return CommitReportUrlResponse(
-      commitReportId: json['commitReportId'] as int,
-      projectId: json['projectId'] as int,
-      storageUrl: json['storageUrl'] as String,
+      commitReportId: json['commitReportId'] as int? ?? 0,
+      projectId: json['projectId'] as int? ?? 0,
+      storageUrl: json['storageUrl']?.toString() ?? '',
       storageKey: json['storageKey'] as String?,
       storageId: json['storageId'] as String?,
       sinceDate: json['sinceDate'] as String?,
       untilDate: json['untilDate'] as String?,
-      createdAt: json['createdAt'] as String,
+      createdAt: json['createdAt']?.toString() ?? '',
     );
   }
 

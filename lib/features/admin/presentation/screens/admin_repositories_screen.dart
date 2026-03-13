@@ -6,6 +6,7 @@ import 'package:edutool/features/admin/presentation/bloc/admin_bloc.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_repo_bloc.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_repo_event.dart';
 import 'package:edutool/features/admin/presentation/bloc/admin_repo_state.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AdminRepositoriesScreen extends StatefulWidget {
   const AdminRepositoriesScreen({super.key});
@@ -56,6 +57,17 @@ class _AdminRepositoriesScreenState extends State<AdminRepositoriesScreen> {
     );
   }
 
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch $url')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loadError != null) {
@@ -81,7 +93,7 @@ class _AdminRepositoriesScreenState extends State<AdminRepositoriesScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: DropdownButtonFormField<int>(
-            initialValue: _selectedCourseId,
+            value: _selectedCourseId,
             isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'Chọn môn học',
@@ -134,68 +146,134 @@ class _AdminRepositoriesScreenState extends State<AdminRepositoriesScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (state is AdminRepoFailure) {
-                      return Center(child: Text('Lỗi: ${state.message}'));
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                            const SizedBox(height: 12),
+                            Text('Lỗi: ${state.message}', textAlign: TextAlign.center),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => context.read<AdminRepoBloc>().add(LoadGroupsByCourse(_selectedCourseId!)),
+                              child: const Text('Thử lại'),
+                            ),
+                          ],
+                        ),
+                      );
                     }
                     if (state is! AdminRepoGroupsLoaded) {
-                      return const SizedBox.shrink();
+                      // Debug info during development
+                      if (state is AdminRepoInitial) {
+                        return const Center(child: Text('Đang đợi chọn môn học...'));
+                      }
+                      return Center(child: Text('Trạng thái không xác định: ${state.runtimeType}'));
                     }
 
                     final groups = state.groups;
                     if (groups.isEmpty) {
-                      return const Center(child: Text('Chưa có nhóm nào trong môn học này.'));
+                      return const Center(
+                        child: Text(
+                          'Chưa có nhóm nào trong môn học này.',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      );
                     }
 
-                    return ListView.separated(
+                    return ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       itemCount: groups.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (ctx, index) {
                         final g = groups[index];
-                        return Card(
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              title: Text(
+                                'Nhóm ${g.groupNumber}  ·  ${g.projectCode}',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    g.projectName,
+                                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
                                     children: [
-                                      Text(
-                                        'Nhóm ${g.groupNumber}  ·  ${g.projectCode} – ${g.projectName}',
-                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 4,
-                                        children: [
-                                          Chip(
-                                            label: Text('${g.memberCount} SV', style: const TextStyle(fontSize: 11, color: AppColors.primary)),
-                                            backgroundColor: AppColors.primary.withOpacity(0.1),
-                                            visualDensity: VisualDensity.compact,
-                                            padding: EdgeInsets.zero,
-                                            avatar: const Icon(Icons.people, size: 14, color: AppColors.primary),
-                                          ),
-                                          Chip(
-                                            label: Text('${g.repoCount} repos', style: const TextStyle(fontSize: 11, color: AppColors.success)),
-                                            backgroundColor: AppColors.success.withOpacity(0.1),
-                                            visualDensity: VisualDensity.compact,
-                                            padding: EdgeInsets.zero,
-                                            avatar: const Icon(Icons.folder, size: 14, color: AppColors.success),
-                                          ),
-                                        ],
-                                      ),
+                                      const Icon(Icons.people_outline, size: 14, color: AppColors.primary),
+                                      const SizedBox(width: 4),
+                                      Text('${g.memberCount} SV', style: const TextStyle(fontSize: 12)),
+                                      const SizedBox(width: 12),
+                                      const Icon(Icons.folder_outlined, size: 14, color: AppColors.success),
+                                      const SizedBox(width: 4),
+                                      Text('${g.repoCount} repos', style: const TextStyle(fontSize: 12)),
                                     ],
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                OutlinedButton.icon(
-                                  onPressed: () => _exportReport(g.projectId, g.projectName),
-                                  icon: const Icon(Icons.download, size: 18),
-                                  label: const Text('Xuất Báo Cáo'),
-                                ),
+                                ],
+                              ),
+                              trailing: IconButton(
+                                onPressed: () => _exportReport(g.projectId, g.projectName),
+                                icon: const Icon(Icons.download, color: AppColors.primary),
+                                tooltip: 'Xuất Báo Cáo',
+                              ),
+                              childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              children: [
+                                const Divider(height: 1),
+                                const SizedBox(height: 12),
+                                if (g.repositories.isEmpty)
+                                  const Text('Không có repository nào.', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey))
+                                else
+                                  ...g.repositories.map((repo) => Padding(
+                                        padding: const EdgeInsets.only(bottom: 8),
+                                        child: InkWell(
+                                          onTap: () => _launchUrl(repo.repoUrl),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.link, size: 16, color: Colors.blue),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      repo.repoName.isNotEmpty ? repo.repoName : repo.repoUrl.split('/').last,
+                                                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                    Text(
+                                                      repo.repoUrl,
+                                                      style: TextStyle(color: Colors.blue.shade700, fontSize: 11, decoration: TextDecoration.underline),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              if (repo.isSelected)
+                                                const Icon(Icons.check_circle, size: 16, color: AppColors.success),
+                                            ],
+                                          ),
+                                        ),
+                                      )),
                               ],
                             ),
                           ),
