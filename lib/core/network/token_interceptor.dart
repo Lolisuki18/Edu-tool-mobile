@@ -15,6 +15,7 @@ import 'package:edutool/core/constants/api_endpoints.dart';
 /// 4a. If refresh succeeds → save new access token, retry queued requests.
 /// 4b. If refresh fails   → clear tokens, fire [SessionEvent.expired], reject.
 class TokenInterceptor extends QueuedInterceptor {
+  static const _extraRetriedKey = 'retried';
   final Dio _dio;
   final AuthInterceptor _authInterceptor;
 
@@ -49,19 +50,40 @@ class TokenInterceptor extends QueuedInterceptor {
     ErrorInterceptorHandler handler,
   ) async {
     final statusCode = err.response?.statusCode;
-    // Handle both 401 and 403, as backend might use either for expired tokens.
+    final options = err.requestOptions;
+
+    // 1. Prevent infinite retry cycles
+    if (options.extra[_extraRetriedKey] == true) {
+      print('[TokenInterceptor] Request already retried, skipping: ${options.path}');
+      return handler.next(err);
+    }
+
+    // 2. Handle both 401 and 403
     if (statusCode != 401 && statusCode != 403) {
       return handler.next(err);
     }
 
-    // Don't retry refresh or login endpoints to avoid infinite loops or unnecessary overhead.
-    final requestPath = err.requestOptions.path;
+    // 3. Don't retry refresh or login endpoints
+    final requestPath = options.path;
     if (requestPath.contains(ApiEndpoints.refresh) || 
         requestPath.contains(ApiEndpoints.login)) {
       return handler.next(err);
     }
 
+    print('[TokenInterceptor] 401/403 detected on ${options.path}. Attempting refresh...');
+
     try {
+      // 4. Check if someone else already refreshed the token while we were in the queue
+      final currentToken = await _authInterceptor.getAccessToken();
+      final requestToken = options.headers['Authorization']
+          ?.toString()
+          .replaceFirst('Bearer ', '');
+
+      if (currentToken != null && currentToken.isNotEmpty && currentToken != requestToken) {
+        print('[TokenInterceptor] Token already refreshed by another request. Retrying ${options.path} immediately.');
+        return _retryRequest(options, currentToken, handler);
+      }
+
       // ── Step 1: Refresh ────────────────────────────────────────────
       final refreshToken = await _authInterceptor.getRefreshToken();
       
@@ -71,16 +93,18 @@ class TokenInterceptor extends QueuedInterceptor {
       );
       
       final data = refreshResponse.data as Map<String, dynamic>?;
-
       final isSuccess = data?['isSuccess'] as bool? ?? false;
       final responseData = data?['data'] as Map<String, dynamic>?;
       final newToken = responseData?['accessToken'] as String?;
       final newRefreshToken = responseData?['refreshToken'] as String?;
 
       if (!isSuccess || newToken == null || newToken.isEmpty) {
+        print('[TokenInterceptor] Refresh failed (isSuccess=false or no token): ${refreshResponse.data}');
         await _onRefreshFailed(err, handler);
         return;
       }
+
+      print('[TokenInterceptor] Refresh successful. Saving new tokens and retrying...');
 
       // ── Step 2: Persist the new tokens ──────────────────────────────
       await _authInterceptor.saveAccessToken(newToken);
@@ -89,13 +113,30 @@ class TokenInterceptor extends QueuedInterceptor {
       }
 
       // ── Step 3: Retry the original failed request ──────────────────
-      final retryOptions = err.requestOptions;
-      retryOptions.headers['Authorization'] = 'Bearer $newToken';
-
-      final retryResponse = await _dio.fetch(retryOptions);
-      return handler.resolve(retryResponse);
-    } on DioException {
+      return _retryRequest(options, newToken, handler);
+    } on DioException catch (refreshErr) {
+      print('[TokenInterceptor] Refresh call failed with error: ${refreshErr.message}');
       await _onRefreshFailed(err, handler);
+    } catch (e) {
+      print('[TokenInterceptor] Unexpected error during refresh: $e');
+      await _onRefreshFailed(err, handler);
+    }
+  }
+
+  /// Retries a request with a new token and marks it as retried.
+  Future<void> _retryRequest(
+    RequestOptions options,
+    String token,
+    ErrorInterceptorHandler handler,
+  ) async {
+    options.headers['Authorization'] = 'Bearer $token';
+    options.extra[_extraRetriedKey] = true;
+
+    try {
+      final response = await _dio.fetch(options);
+      return handler.resolve(response);
+    } on DioException catch (e) {
+      return handler.next(e);
     }
   }
 
